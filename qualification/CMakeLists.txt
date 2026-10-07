@@ -302,6 +302,14 @@ target_link_libraries(
     Salts::CFlow)
 
 book_qualification_gate(
+  book_ch07_plan_certificate
+  ch07_plan_certificate.c)
+target_link_libraries(
+  book_ch07_plan_certificate
+  PRIVATE
+    Salts::CFlow)
+
+book_qualification_gate(
   book_ch13_parse_u64
   ch13_parse_u64.c)
 
