@@ -1,3 +1,4 @@
+#include <cflow/lower.h>
 #include <cflow/opt.h>
 #include <cflow/property.h>
 #include <cflow/stream.h>
