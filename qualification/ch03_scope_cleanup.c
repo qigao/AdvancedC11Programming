@@ -65,7 +65,7 @@ CMETA_DEFINE_LIFECYCLE(
     book_first_init,
     book_first_restore,
     book_first_move,
-    CMETA_LIFECYCLE_MOVABLE);
+    CMETA_LIFECYCLE_MOVABLE)
 
 static const cmeta_type_identity book_second_identity =
     CMETA_TYPE_ID_ATOM_INIT("book.ScopeSecond");
@@ -109,7 +109,7 @@ CMETA_DEFINE_LIFECYCLE(
     book_second_init,
     book_second_restore,
     book_second_move,
-    CMETA_LIFECYCLE_MOVABLE);
+    CMETA_LIFECYCLE_MOVABLE)
 
 static cmeta_status book_scope_body(
     book_first_resource *first,
