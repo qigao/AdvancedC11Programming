@@ -10,6 +10,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 find_package(Salts CONFIG REQUIRED)
+find_package(SaltsUtils CONFIG REQUIRED)
 
 set(CMAKE_REQUIRED_LIBRARIES Salts::CMeta)
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
@@ -332,6 +333,14 @@ target_link_libraries(
   book_ch06_authorized_rewrite
   PRIVATE
     Salts::CFlow)
+
+book_qualification_gate(
+  book_ch08_databind_public_sdk
+  ch08_databind_public_sdk.c)
+target_link_libraries(
+  book_ch08_databind_public_sdk
+  PRIVATE
+    Salts::DataBind)
 
 book_qualification_gate(
   book_ch09_reactive_demand
