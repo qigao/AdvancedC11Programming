@@ -186,6 +186,20 @@ int main(void)
         request.scale != 1u)
         goto cleanup;
 
+    if (data_bind_binding_plan_bind_call(
+            plan,
+            &provider,
+            &options,
+            &frame,
+            &lifetime,
+            &diagnostic) != DATA_BIND_ERR_INVALID_ARG)
+        goto cleanup;
+
+    if (!data_bind_binding_call_is_live(&lifetime) ||
+        request.left != 3u ||
+        request.scale != 1u)
+        goto cleanup;
+
     if (databind_10_ServiceSdk_4_Calc_3_Add(
             &request,
             &response) != 0)
