@@ -194,27 +194,66 @@ facts once
    -> ordinary C executes
 ~~~
 
-## Chapter 2 — Generic / Struct / Traits：让类型事实只写一次
+## Chapter 2 — 有限元编程内核：Generic / Struct / Traits / Relation
 
-核心 before/after：
+Chapter 2 不再把 Generic 当成从宏“逃离”后的新世界，而是把它放回共享 PP/compiler kernel 的一个 consumer。
 
-~~~c
-DECLARE_LIST(IntList, int);
-DECLARE_VEC(IntVec, int);
-DECLARE_OPTION(MaybeInt, int);
+首先建立机械层：
+
+~~~text
+finite map / pair map
+tuple projection
+separator policy
+token predicates
+zero-argument capability
+unique lexical names
+native compiler type capabilities
 ~~~
 
-变成：
+然后才进入 semantic entry points：
 
 ~~~c
-typed(List, IntList, int);
-typed(Vec, IntVec, int);
-typed(Option, MaybeInt, int);
+cmeta_type(List, IntList, int);
+
+cmeta_struct(User,
+    cmeta_field(int, id)
+    cmeta_field(double, score)
+);
+
+cmeta_traits(User,
+    (equal, user_equal),
+    (hash, user_hash)
+);
+
+TypeFunction(CommonType,
+    (int, int, int),
+    (int, double, double)
+);
 ~~~
 
-必须落到 type identity、field facts、traits、finite relations、generated C type 和 ordinary C algorithm。
+必须明确当前迁移：
 
-本章不把 Lean 当卖点。
+~~~text
+historical typed(...)
+    = universal routing surface
+
+current cmeta_type(...)
+    = finite Generic only
+~~~
+
+以及两个不同的 type 层：
+
+~~~text
+CMETA_NATIVE_TYPEOF(expr)
+    = compiler-native type
+
+CMETA_TYPEOF(T)
+    = CMeta semantic descriptor
+~~~
+
+本章必须落到 finite arity、compile-fail、type identity、field/layout proof、traits single-source、finite relation、generated typed facade 与 shared ordinary-C algorithm。
+
+Lean 不是这一章的主要证据；preprocess、compile-pass/fail、cross-compiler、Multi-TU 与 code-size qualification 才是。
 
 ## Chapter 3 — FunctionDesc 与 Callable：描述函数，不等于执行函数
 
