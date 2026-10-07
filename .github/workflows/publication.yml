@@ -182,6 +182,7 @@ jobs:
       - name: Configure qualification gates
         env:
           SALTS_ROOT: ${{ env.SALTS_SDK_PREFIX }}
+          SALTS_UTILS_ROOT: ${{ env.SALTS_UTILS_SDK_PREFIX }}
         shell: bash
         run: |
           set -euo pipefail
