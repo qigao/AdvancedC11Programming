@@ -575,24 +575,26 @@ response
 
 # 6. Projection：同一个 Contract IR 生成不同 artifact
 
-统一 compiler entry：
+当前 public CMake frontend 使用 `salts_idl_target()`，并明确把 transport 与 artifact 分成两个轴：
 
 ~~~cmake
-databind_target(
+salts_idl_target(
     TARGET users
-    IDL users.dbidl
-    SOURCES users.c
+    IDL users.schema
 
-    PROJECTIONS
+    ARTIFACTS
         NATIVE
+        OPENAPI
+
+    TRANSPORTS
         HTTP
         RPC
-        PLUGIN
-        WASM
-        OPENAPI
-        MOCK
 )
 ~~~
+
+PLUGIN / WASM 仍然消费同一个 Contract IR，但还需要各自明确的 control-plane 输入，例如 COMPONENT、VERSION / SOURCES 或 WASM_CORE_MODULE；不要把这些输入藏进一个模糊的 `PROJECTIONS` list。
+
+当前 public frontend 也不应该被文档伪装成尚未发布的 backend 集合。Mock 可以继续作为 compiler projection 概念讨论，但如果 public CMake surface 尚未导出对应 artifact，就不能把它写成可直接调用的 build API。
 
 不要设计：
 

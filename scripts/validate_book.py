@@ -31,6 +31,10 @@ MOVING_MASTER_LINK_RE = re.compile(
     r"|raw\.githubusercontent\.com/[^/\s]+/[^/\s]+/master/)",
     re.IGNORECASE,
 )
+STALE_IDL_PUBLIC_SURFACE_RE = re.compile(
+    r"(?:\bdatabind_target\s*\(|\.dbidl\b)",
+    re.IGNORECASE,
+)
 LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 PART_RE = re.compile(r"^#{1,3}\s+(Part\s+[IVX]+\s+—\s+.+?)\s*$")
 
@@ -217,6 +221,11 @@ def validate_text_hygiene(path: Path) -> None:
     if MOVING_MASTER_LINK_RE.search(text):
         raise ValidationError(
             f"{path.name}: contains a moving GitHub master source link"
+        )
+    if STALE_IDL_PUBLIC_SURFACE_RE.search(text):
+        raise ValidationError(
+            f"{path.name}: contains retired DataBind public build spelling "
+            "(databind_target/.dbidl)"
         )
 
 
