@@ -2,6 +2,7 @@
 
 #include <stdatomic.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <string.h>
 
 typedef struct book_machine_probe {
@@ -518,5 +519,9 @@ int main(void)
 
     cflow_executor_destroy(&executor);
     cflow_machine_destroy(&machine);
+
+    if (rc != 0)
+        fprintf(stderr, "machine staged commit gate rc=%d\n", rc);
+
     return rc;
 }
