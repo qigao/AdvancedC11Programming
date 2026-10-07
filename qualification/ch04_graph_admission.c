@@ -12,11 +12,6 @@ cmeta_function(filter, value, bool, book_even, (int x))
     return (x % 2) == 0;
 }
 
-cmeta_function(map, value, long, book_long_inc, (long x))
-{
-    return x + 1;
-}
-
 static int book_bad_graph(void)
 {
     cflow_graph graph = {0};
@@ -143,7 +138,7 @@ static int book_good_graph(void)
 
     after_square = graph.version;
 
-    if (!cflow_graph_map(&graph, book_long_inc.fn)) {
+    if (!cflow_graph_take(&graph, 8u)) {
         rc = 23;
         goto done;
     }
@@ -194,7 +189,7 @@ static int book_good_graph(void)
     clone_version = clone.version;
     source_before_extra = graph.version;
 
-    if (!cflow_graph_map(&graph, book_long_inc.fn)) {
+    if (!cflow_graph_skip(&graph, 1u)) {
         rc = 31;
         goto done;
     }
