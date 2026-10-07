@@ -65,7 +65,23 @@ The book shows how that one logical contract can be checked and projected to HTT
 
 ### Part I — Native Semantic IR
 
-Start with repeated ordinary C facts and move through Generic, Struct/Enum, Traits, semantic type identity, FunctionDesc, and Callable.
+Start with the division of labor inside ordinary C rather than treating macros as a temporary stage to escape:
+
+~~~text
+normal function / static inline
+        -> typed behavior
+
+finite macro / PP
+        -> tokens / declarations / schema replay
+
+compiler capability
+        -> typeof / same-type / cleanup / section
+
+canonical Reflection
+        -> stable semantic truth
+~~~
+
+Then move through Generic, Struct/Enum, Traits, semantic type identity, FunctionDesc, and Callable. CMeta remains directly consumable from ordinary C; optional source lowering is not a prerequisite.
 
 A key distinction is:
 
@@ -124,7 +140,7 @@ Each runtime chapter must identify which IR it consumes and which metadata has a
 
 <!-- book-toc:start -->
 **Part I — Native Semantic IR**
-- [Chapter 1: Where CMeta Begins — The Pain of Writing C Macros](./en/ch-01.md)
+- [Chapter 1: From Linux-Style C to CMeta — Macros, static inline, and Zero-Runtime Abstraction](./en/ch-01.md)
 - [Chapter 2: From Macros to Generic — Collapse Repeated Type Contracts into One Definition](./en/ch-02.md)
 - [Chapter 3: From Function Pointers to Function Semantics — FunctionDesc, Callable, Lambda, and Bind](./en/ch-03.md)
 
