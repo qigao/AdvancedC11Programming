@@ -19,6 +19,40 @@ function(book_qualification_gate target)
 endfunction()
 
 book_qualification_gate(
+  book_ch01_cmeta_pp
+  ch01_cmeta_pp.c)
+target_link_libraries(
+  book_ch01_cmeta_pp
+  PRIVATE
+    Salts::CMeta)
+
+book_qualification_gate(
+  book_ch02_type_identity
+  ch02_type_identity_main.c
+  ch02_type_identity_a.c
+  ch02_type_identity_b.c)
+target_link_libraries(
+  book_ch02_type_identity
+  PRIVATE
+    Salts::CMeta)
+
+book_qualification_gate(
+  book_ch03_receiver_resolution
+  ch03_receiver_resolution.c)
+target_link_libraries(
+  book_ch03_receiver_resolution
+  PRIVATE
+    Salts::CMeta)
+
+book_qualification_gate(
+  book_ch03_lifecycle_binding
+  ch03_lifecycle_binding.c)
+target_link_libraries(
+  book_ch03_lifecycle_binding
+  PRIVATE
+    Salts::CMeta)
+
+book_qualification_gate(
   book_ch03_exact_invoke
   ch03_exact_invoke.c)
 target_link_libraries(
@@ -37,3 +71,11 @@ target_link_libraries(
 book_qualification_gate(
   book_ch13_parse_u64
   ch13_parse_u64.c)
+
+book_qualification_gate(
+  book_ch13_plugin_exact_abi
+  ch13_plugin_exact_abi.c)
+target_link_libraries(
+  book_ch13_plugin_exact_abi
+  PRIVATE
+    Salts::Plugin)
