@@ -14,6 +14,16 @@ The snapshots below are the reproducible reference points used when the manuscri
 
 The Salts repository may move beyond this commit. Statements such as “the implementation in this edition” refer to the snapshot above, not necessarily the latest `master`.
 
+## SaltsUtils
+
+- Repository: `qigao/salts-utils`
+- Edition implementation snapshot: `23c01b1379d3e578a4633acdf7c44166a1eb0714`
+- Used by Chapter 8/13 for the concrete DataBind/IDL compiler and runtime binding model.
+- Anchors the post-`databindc` architecture in which `salts-idlc` + `salts_idl_target` own the typed frontend/build projections, generated `DataBindServiceNativeBinding` is joined with current CMeta descriptors by `data_bind_binding_plan_compile_service()`, and Plugin execution admission remains lease-bounded through bind/invoke/egress/cleanup.
+- Also anchors the installed-consumer qualification showing generated Plugin/client targets no longer depend on the IDL/Schema frontend at runtime.
+
+The SaltsUtils repository may move beyond this commit. Chapter 8/13 API names and lifecycle claims marked as current in this edition refer to this snapshot.
+
 ## CHTTP
 
 - Repository: `qigao/chttp`
