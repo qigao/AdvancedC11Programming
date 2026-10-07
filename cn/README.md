@@ -10,7 +10,7 @@
 **Part I — Native Semantic IR**
 - [第一章：从 Linux-style C 到 CMeta——Macro、static inline 与零运行时抽象](./ch-01.md)
 - [第二章：有限元编程内核——Generic、Struct、Traits 与类型关系](./ch-02.md)
-- [第三章：从函数指针到函数语义——FunctionDesc、Callable、Lambda 与 Bind](./ch-03.md)
+- [第三章：函数语义与执行投影——FunctionDesc、Receiver、Bind 与 Invokable](./ch-03.md)
 
 **Part II — Execution IR**
 - [第四章：从 Callable 到 Graph——把计算本身变成数据](./ch-04.md)
