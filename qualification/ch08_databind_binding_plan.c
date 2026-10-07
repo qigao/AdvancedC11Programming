@@ -119,7 +119,9 @@ int main(void)
             &error) != DATA_BIND_OK)
         goto cleanup;
 
-    if (native.function == NULL)
+    if (native.function == NULL ||
+        databind_10_ServiceSdk_4_Calc_3_Add__databind_function() !=
+            native.function)
         goto cleanup;
 
     if (ServiceSdk_codec_create(&codec, &error) != DATA_BIND_OK ||
