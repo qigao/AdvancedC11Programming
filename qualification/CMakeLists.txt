@@ -270,6 +270,14 @@ target_link_libraries(
     Salts::CMeta)
 
 book_qualification_gate(
+  book_ch04_graph_admission
+  ch04_graph_admission.c)
+target_link_libraries(
+  book_ch04_graph_admission
+  PRIVATE
+    Salts::CFlow)
+
+book_qualification_gate(
   book_ch05_stream_graph
   ch05_stream_graph.c)
 target_link_libraries(
