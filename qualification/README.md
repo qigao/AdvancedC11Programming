@@ -31,6 +31,7 @@ Current gates:
 - `ch06_normalize_snapshot.c`: a real ZIP surface Graph lowers to primitive RELATION IR in a new snapshot; source/version remain unchanged, and normalizing the normalized Graph again yields an independently versioned but structurally equal Graph;
 - `ch06_optimizer_trace.c`: an idempotent-map rewrite emits one stable proof-trace rule bound to the exact source/output Graph versions; optimizing the result again is structurally idempotent, and later source mutation invalidates the old trace binding;
 - `ch07_plan_certificate.c`: a normalized Graph compiles into a reusable Plan and sequential certificate; mutating the source Graph invalidates the old certificate while the already-compiled Plan continues executing its original pre-decoded program;
+- `ch07_direct_no_fallback.c`: an eligible generated Filter/Map Direct pipeline executes through StaticTarget stages, while an effectful stateful Direct schema returns `INELIGIBLE`; explicitly selecting Plan for the same callable succeeds without any hidden Direct fallback;
 - `ch13_plugin_exact_abi.c`: current Plugin manifest validates only at the exact public ABI epoch and exact manifest layout; a different host ABI/query, ABI epoch, or manifest size is rejected with no negotiation or fallback;
 - `ch13_parse_u64.c`: bounded decimal conversion and failure-atomic output.
 
@@ -66,3 +67,5 @@ The normalization gate treats lowering as artifact transformation rather than ru
 The optimizer-trace gate checks the C bridge, not the theorem itself: metadata admits a candidate, the optimizer records a stable rule id and exact artifact coordinates, and version changes invalidate stale trace bindings. Semantic theorem authority remains outside this runtime test.
 
 The Plan/Certificate gate separates execution artifact from witness: Plan evaluation does not query later Graph topology, while Certificate checking fails closed once the source Graph version/fingerprint no longer matches. Certificate rows are execution-only, not a persistent wire identity.
+
+The Direct gate makes backend policy observable: Direct eligibility is a strict permission to remove generic runtime layers, capacity/ineligibility failures return explicit statuses, and selecting Plan for an ineligible callable is a separate caller action rather than an internal fallback.
