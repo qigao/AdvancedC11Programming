@@ -23,6 +23,7 @@ Current gates:
 - `ch03_lifecycle_binding.c`: validate raw Data/lifecycle metadata once into an admitted binding, then reuse that capability for init/move/restore; mismatched native layout fails closed and clears the rejected binding;
 - `ch03_exact_invoke.c`: exact thunk success, aliasing, and fail-before-call behavior;
 - `ch05_stream_graph.c`: Stream façade builds the expected typed Graph IR;
+- `ch13_plugin_exact_abi.c`: current Plugin manifest validates only at the exact public ABI epoch and exact manifest layout; a different host ABI/query, ABI epoch, or manifest size is rejected with no negotiation or fallback;
 - `ch13_parse_u64.c`: bounded decimal conversion and failure-atomic output.
 
 The Chapter 1 gate checks the resulting ordinary C declarations and values. It
