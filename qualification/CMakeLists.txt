@@ -71,3 +71,11 @@ target_link_libraries(
 book_qualification_gate(
   book_ch13_parse_u64
   ch13_parse_u64.c)
+
+book_qualification_gate(
+  book_ch13_plugin_exact_abi
+  ch13_plugin_exact_abi.c)
+target_link_libraries(
+  book_ch13_plugin_exact_abi
+  PRIVATE
+    Salts::Plugin)
