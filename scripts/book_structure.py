@@ -31,32 +31,32 @@ PUBLICATION_ORDER = [
 PARTS = [
     (
         "I",
-        {"cn": "Native Semantic IR", "en": "Native Semantic IR"},
+        {"cn": "CMeta：宏、类型与函数", "en": "CMeta: Macros, Types, and Functions"},
         ["ch-01.md", "ch-02.md", "ch-03.md"],
     ),
     (
         "II",
-        {"cn": "Execution IR", "en": "Execution IR"},
+        {"cn": "CMeta 应用：计算图、Stream 与证明", "en": "CMeta Applications: Graphs, Streams, and Proofs"},
         ["ch-04.md", "ch-05.md", "ch-06.md", "ch-07.md"],
     ),
     (
         "III",
-        {"cn": "Contract IR 与 Compiler", "en": "Contract IR and the Compiler"},
+        {"cn": "CMeta 应用：契约绑定与代码生成", "en": "CMeta Applications: Contract Binding and Code Generation"},
         ["ch-13.md"],
     ),
     (
         "IV",
         {
-            "cn": "Live Runtime 与工程边界",
-            "en": "Live Runtime and Engineering Boundaries",
+            "cn": "CMeta 应用：响应式执行与工程边界",
+            "en": "CMeta Applications: Reactive Execution and Engineering Boundaries",
         },
         ["ch-08.md", "ch-09.md", "ch-10.md", "ch-11.md", "ch-12.md"],
     ),
 ]
 
 CLOSING = {
-    "cn": "收束 — Restraint 与 Synthesis",
-    "en": "Closing — Restraint and Synthesis",
+    "cn": "收束 — 技巧取舍与综合应用",
+    "en": "Closing — Trade-offs and Integration",
 }
 CLOSING_FILES = ["ch-14.md", "ch-15.md"]
 

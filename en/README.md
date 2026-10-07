@@ -7,30 +7,30 @@ Chapter filenames such as `ch-13.md` are stable source IDs, not visible chapter 
 ## Table of Contents
 
 <!-- book-toc:start -->
-**Part I — Native Semantic IR**
-- [Chapter 1: From Linux-Style C to CMeta — Macros, static inline, and Zero-Runtime Abstraction](./ch-01.md)
-- [Chapter 2: A Finite Metaprogramming Kernel — Generic, Struct, Traits, and Type Relations](./ch-02.md)
-- [Chapter 3: Function Semantics and Executable Projections — FunctionDesc, Receiver, Bind, and Invokable](./ch-03.md)
+**Part I — CMeta: Macros, Types, and Functions**
+- [Chapter 1: CMeta Foundations: Macros, Inline Functions, and Compile-Time Constraints](./ch-01.md)
+- [Chapter 2: Finite Metaprogramming: Generics, Structs, Traits, and Type Relations](./ch-02.md)
+- [Chapter 3: Function Reflection: Descriptors, Call Adapters, and Parameter Binding](./ch-03.md)
 
-**Part II — Execution IR**
-- [Chapter 4: From Callable to Graph — Make Computation Itself Data](./ch-04.md)
-- [Chapter 5: From Graph to Stream — Build the Same Typed Graph Through a Higher-Level Surface](./ch-05.md)
-- [Chapter 6: Trusted Graph Semantics — From Observable Semantics to Verified Rewrite](./ch-06.md)
-- [Chapter 7: From Graph to Plan and Direct — Move Complexity Earlier and Return the Hot Path to Ordinary C](./ch-07.md)
+**Part II — CMeta Applications: Graphs, Streams, and Proofs**
+- [Chapter 4: From Callables to Graphs: Representation and Type Checking](./ch-04.md)
+- [Chapter 5: Stream Interfaces: Building Typed Graphs](./ch-05.md)
+- [Chapter 6: Graph Semantics and Rewrite Proofs](./ch-06.md)
+- [Chapter 7: From Graphs to Execution Plans: Optimization and Direct Execution](./ch-07.md)
 
-**Part III — Contract IR and the Compiler**
-- [Chapter 8: From Repeated API Contracts to a Contract Compiler — DataBind IDL, FunctionDesc, and Multi-Backend Generation](./ch-13.md)
+**Part III — CMeta Applications: Contract Binding and Code Generation**
+- [Chapter 8: Contract Binding and Code Generation with CMeta and DataBind](./ch-13.md)
 
-**Part IV — Live Runtime and Engineering Boundaries**
-- [Chapter 9: From Stream to Reactive — WAIT, Wake, Demand, and Backpressure](./ch-08.md)
-- [Chapter 10: Executor — Separate Execution Policy from Computation Semantics](./ch-09.md)
-- [Chapter 11: From Event to State Machine — Turn State Change into a Verifiable Execution Model](./ch-10.md)
-- [Chapter 12: From State Machine to Actor — Compose Concurrent Objects with Mailbox, Serialized Execution, and Lifecycle](./ch-11.md)
-- [Chapter 13: Engineering Boundaries — ABI, Multi-TU, Semantic Identity, and Installable C Libraries](./ch-12.md)
+**Part IV — CMeta Applications: Reactive Execution and Engineering Boundaries**
+- [Chapter 9: Reactive Execution: Waiting, Waking, Demand, and Backpressure](./ch-08.md)
+- [Chapter 10: Executors and Schedulers: Tasks, Capacity, and Completion Obligations](./ch-09.md)
+- [Chapter 11: Events and State Machines: Types, Transitions, and Commit](./ch-10.md)
+- [Chapter 12: Actors: Mailboxes, Serialized Mutation, and Object Lifetime](./ch-11.md)
+- [Chapter 13: CMeta Engineering Boundaries: Type Identity, ABI, and Shared Libraries](./ch-12.md)
 
-**Closing — Restraint and Synthesis**
-- [Chapter 14: Finite, Explicit, On Demand — When to Stop Adding Meta](./ch-14.md)
-- [Chapter 15: From Repeated Knowledge to Three IRs — Contract, Native, and Execution Semantics for Modern C](./ch-15.md)
+**Closing — Trade-offs and Integration**
+- [Chapter 14: Choosing Techniques: When Ordinary C Is Sufficient](./ch-14.md)
+- [Chapter 15: Integrating CMeta: From Declared Facts to Reliable Execution](./ch-15.md)
 <!-- book-toc:end -->
 
 Implementation/API/theorem references remain pinned through [SOURCE_SNAPSHOTS.md](../SOURCE_SNAPSHOTS.md).
