@@ -111,6 +111,47 @@ TypeFunction(BookConflict,
 int main(void) { return 0; }
 ]=])
 
+book_expect_c_compile(
+  BOOK_REFLECT_WRONG_FIELD_TYPE
+  FALSE
+  [=[
+#include <cmeta/data_reflect.h>
+typedef struct book_wrong_reflection { int id; } book_wrong_reflection;
+cmeta_reflect_data(book_wrong_reflection, "book.Wrong",
+    cmeta_field(long, id)
+);
+int main(void) { return 0; }
+]=])
+
+book_expect_c_compile(
+  BOOK_TRAITS_DUPLICATE_ROW
+  FALSE
+  [=[
+#include <cmeta/type_traits.h>
+static bool book_equal(const void *a, const void *b) {
+    return a == b;
+}
+cmeta_traits(book_duplicate,
+    (equal, book_equal),
+    (equal, book_equal)
+);
+int main(void) { return 0; }
+]=])
+
+book_expect_c_compile(
+  BOOK_TRAITS_WRONG_CALLBACK
+  FALSE
+  [=[
+#include <cmeta/type_traits.h>
+static int book_bad_equal(const void *a, const void *b) {
+    return a == b;
+}
+cmeta_traits(book_bad,
+    (equal, book_bad_equal)
+);
+int main(void) { return 0; }
+]=])
+
 function(book_qualification_gate target)
   add_executable(${target} ${ARGN})
   if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
@@ -132,6 +173,14 @@ book_qualification_gate(
   ch01_cmeta_pp.c)
 target_link_libraries(
   book_ch01_cmeta_pp
+  PRIVATE
+    Salts::CMeta)
+
+book_qualification_gate(
+  book_ch02_declaration_metadata
+  ch02_declaration_metadata.c)
+target_link_libraries(
+  book_ch02_declaration_metadata
   PRIVATE
     Salts::CMeta)
 
