@@ -146,6 +146,15 @@ jobs:
               Path("lib/cmake/SaltsUtils/SaltsUtilsConfig.cmake"),
           )
 
+          # Python zip extraction does not restore the executable permission
+          # carried by the NuGet archive. The release contract requires the
+          # matching host compiler in the linux-x64 SDK; restore only its mode,
+          # never substitute another compiler.
+          idlc = salts_utils / "bin" / "salts-idlc"
+          if not idlc.is_file():
+              raise SystemExit(f"latest SaltsUtils SDK is missing host salts-idlc: {idlc}")
+          idlc.chmod(idlc.stat().st_mode | 0o111)
+
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
               env.write(f"SALTS_SDK_PREFIX={salts}\n")
               env.write(f"SALTS_UTILS_SDK_PREFIX={salts_utils}\n")
