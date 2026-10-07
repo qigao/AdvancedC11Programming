@@ -142,7 +142,7 @@ Each runtime chapter must identify which IR it consumes and which metadata has a
 **Part I — Native Semantic IR**
 - [Chapter 1: From Linux-Style C to CMeta — Macros, static inline, and Zero-Runtime Abstraction](./en/ch-01.md)
 - [Chapter 2: A Finite Metaprogramming Kernel — Generic, Struct, Traits, and Type Relations](./en/ch-02.md)
-- [Chapter 3: From Function Pointers to Function Semantics — FunctionDesc, Callable, Lambda, and Bind](./en/ch-03.md)
+- [Chapter 3: Function Semantics and Executable Projections — FunctionDesc, Receiver, Bind, and Invokable](./en/ch-03.md)
 
 **Part II — Execution IR**
 - [Chapter 4: From Callable to Graph — Make Computation Itself Data](./en/ch-04.md)
