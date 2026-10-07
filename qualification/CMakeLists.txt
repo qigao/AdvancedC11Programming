@@ -310,6 +310,14 @@ target_link_libraries(
     Salts::CFlow)
 
 book_qualification_gate(
+  book_ch07_direct_no_fallback
+  ch07_direct_no_fallback.c)
+target_link_libraries(
+  book_ch07_direct_no_fallback
+  PRIVATE
+    Salts::CFlow)
+
+book_qualification_gate(
   book_ch13_parse_u64
   ch13_parse_u64.c)
 
