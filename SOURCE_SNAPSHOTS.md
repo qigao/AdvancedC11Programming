@@ -4,6 +4,16 @@ This book is intentionally grounded in fixed implementation snapshots instead of
 
 The snapshots below are the reproducible reference points used when the manuscript describes concrete C structs, APIs, tests, Lean theorem names, runtime contracts, and application-layer behavior.
 
+## Linux kernel reference
+
+- Repository: `torvalds/linux`
+- Reference snapshot: `602042bf29f6efde39cfb5fdd9289bf4854bc0c5`
+- Used only by Chapter 1 to ground the phrase “Linux-style C” in concrete production patterns.
+- Reference paths: `include/linux/syscalls.h` (finite `__MAP` pair replay), `include/linux/minmax.h` (single-evaluation/type-checked min/max), `include/linux/container_of.h` (member-type/layout checked container recovery), and `include/linux/cleanup.h` (scope cleanup/guard patterns).
+- The manuscript extracts engineering rules and uses its own simplified diagrams/API examples; kernel-specific GNU/C extension syntax is not presented as a portable CMeta contract.
+
+This snapshot is a comparative reference, not an implementation dependency of Salts or the book.
+
 ## Salts
 
 - Repository: `qigao/salts`
