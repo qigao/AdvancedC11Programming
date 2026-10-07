@@ -37,6 +37,14 @@ target_link_libraries(
     Salts::CMeta)
 
 book_qualification_gate(
+  book_ch03_lifecycle_binding
+  ch03_lifecycle_binding.c)
+target_link_libraries(
+  book_ch03_lifecycle_binding
+  PRIVATE
+    Salts::CMeta)
+
+book_qualification_gate(
   book_ch03_exact_invoke
   ch03_exact_invoke.c)
 target_link_libraries(
