@@ -334,6 +334,14 @@ target_link_libraries(
     Salts::CFlow)
 
 book_qualification_gate(
+  book_ch09_reactive_demand
+  ch09_reactive_demand.c)
+target_link_libraries(
+  book_ch09_reactive_demand
+  PRIVATE
+    Salts::CFlow)
+
+book_qualification_gate(
   book_ch13_parse_u64
   ch13_parse_u64.c)
 
