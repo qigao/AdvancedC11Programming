@@ -195,6 +195,14 @@ target_link_libraries(
     Salts::CMeta)
 
 book_qualification_gate(
+  book_ch03_scope_cleanup
+  ch03_scope_cleanup.c)
+target_link_libraries(
+  book_ch03_scope_cleanup
+  PRIVATE
+    Salts::CMeta)
+
+book_qualification_gate(
   book_ch03_receiver_resolution
   ch03_receiver_resolution.c)
 target_link_libraries(
