@@ -1,6 +1,8 @@
-# C with Modern Grammar
+# Advanced C11 Programming
 
-**Know more before execution; do less at runtime**
+**From Macros to Modern Programming Models**
+
+*Metaprogramming, Reflection, Streaming, and Reactive Programming*
 
 [中文](./README_CN.md) | **English**
 
@@ -15,6 +17,8 @@ Its central question is:
 > **When the same stable knowledge is duplicated across C code, metadata, HTTP/RPC bindings, plugins, mocks, and optimizers, how can we lift that knowledge into finite, explicit, checkable IRs, consume as much of it as possible before execution, and still end in ordinary C?**
 
 ## Three IRs
+
+This book calls its metaprogramming, RAII, and Reflection facilities **CMeta**, and the `cmeta_plugin_*` API **CMeta Plugin**. Types, functions, and declaration macros use `cmeta_*`; constants and low-level macros use `CMETA_*`. **Salts** names the source repository and SDK distribution, so installation examples retain the actual build identifiers `find_package(Salts)`, `Salts::CMeta`, and `Salts::Plugin`. Components such as CFlow and DataBind keep their own names.
 
 The book now revolves around three distinct semantic layers:
 

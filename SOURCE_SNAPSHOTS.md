@@ -14,15 +14,17 @@ The snapshots below are the reproducible reference points used when the manuscri
 
 This snapshot is a comparative reference, not an implementation dependency of Salts or the book.
 
-## Salts
+## Salts repository — CMeta, CFlow, and runtime components
 
 - Repository: `qigao/salts`
 - Edition implementation snapshot: `a650262031e9b3e5f11a227a7911a75db9ae1fb8`
-- Used primarily by Chapters 1–12 and by the Salts side of Chapter 13.
+- Used primarily by Chapters 1–12 and by the CMeta/CFlow engineering boundaries in Chapter 13.
 - Covers the Salts 2.1.0 preparation baseline, including the post-#976 finite PP/compiler kernel, canonical `cmeta_type` routing, native-data reflection, CMeta/CFlow implementation, and `formal/cmeta_cflow_calculus` proof package referenced by this edition.
 - The same snapshot also anchors Part III's concrete NativeIO/CNet, CSTL, TinyTest/TinyMock, and CFlow I/O examples; those examples are not inferred from moving `master`.
 
 The Salts repository may move beyond this commit. Statements such as “the implementation in this edition” refer to the snapshot above, not necessarily the latest `master`.
+
+Naming in prose follows the component: CMeta for metaprogramming, RAII, and Reflection; CMeta Plugin for the `cmeta_plugin_*` API; CFlow for execution semantics. Salts identifies the repository, release, and CMake package. The pinned build exports `Salts::CMeta`, `Salts::CFlow`, and `Salts::Plugin`; these exact build identifiers do not rename the component APIs.
 
 ## SaltsUtils
 
@@ -43,6 +45,8 @@ The SaltsUtils repository may move beyond this commit. Chapter 8/13 API names an
 - Also anchors the DataBind HTTP OpenAPI provider used to demonstrate that runtime route semantics and documentation are derived from the same HTTP projection facts.
 
 The CHttp repository may move beyond this commit. Chapter 8/13 CHttp API names and lifecycle claims marked as current in this edition refer to this snapshot.
+
+The pinned [CHttp Service header](https://github.com/qigao/chttp/blob/2e950615a7f47190258c4cb1d2cdab32e80a05b8/service/include/chttp_service/service.h) still uses pre-migration Plugin type names. Chapter 8 labels its mount struct as an illustration normalized to the edition's `cmeta_plugin_registry` / `cmeta_plugin_ref` names, not a verbatim excerpt. These independently pinned repositories provide implementation evidence; they do not establish a qualified combined SDK. CHttp's Plugin API migration and a combined installed-consumer build remain necessary before claiming compatibility with this edition's Salts / SaltsUtils snapshots.
 
 ## Original manuscript migration
 

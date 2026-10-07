@@ -8,8 +8,10 @@ import re
 import shutil
 from pathlib import Path
 
+from build_book import EDITION_META
+
 ROOT = Path(__file__).resolve().parents[1]
-BOOK_NAME = "C-with-Modern-Grammar"
+BOOK_NAME = "Advanced-C11-Programming"
 FENCE_RE = re.compile(
     r"(?ms)^(?P<fence>`{3}|~{3})mermaid\s*\n(?P<body>.*?)(?:\n)(?P=fence)\s*$"
 )
@@ -96,12 +98,18 @@ def main() -> None:
     prepared = prepared.replace(
         "<!-- chapter-break -->", "::: {.chapter-break}\n:::"
     )
+    # Pandoc renders the title, subtitle and short abstract on its title page.
+    # Remove the Markdown-only display block to avoid repeating it after the TOC.
+    meta = EDITION_META[edition]
     prepared, replacements = re.subn(
-        r"(?m)^# C with Modern Grammar\s*\n", "", prepared, count=1
+        rf"(?m)^# {re.escape(meta['title'])}\n\n"
+        rf"\*\*{re.escape(meta['subtitle'])}\*\*\n\n"
+        rf"\*{re.escape(meta['tagline'])}\*\n",
+        "", prepared, count=1,
     )
     if replacements != 1:
         raise SystemExit(
-            f"{edition}: canonical display-title H1 not found exactly once"
+            f"{edition}: canonical display-title block not found exactly once"
         )
     if FENCE_RE.search(prepared):
         raise SystemExit(f"{edition}: Mermaid fence remained after preparation")

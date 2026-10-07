@@ -129,7 +129,7 @@ jobs:
       - name: Render standalone HTML
         run: |
           for edition in cn en; do
-            pandoc "dist/release/$edition/C-with-Modern-Grammar.release.md" \
+            pandoc "dist/release/$edition/Advanced-C11-Programming.release.md" \
               --from markdown-raw_html \
               --to html5 \
               --standalone \
@@ -138,20 +138,20 @@ jobs:
               --embed-resources \
               --resource-path="dist/release/$edition:release" \
               --css release/book.css \
-              --output "dist/release/$edition/C-with-Modern-Grammar.html"
+              --output "dist/release/$edition/Advanced-C11-Programming.html"
           done
 
       - name: Render EPUB3
         run: |
           for edition in cn en; do
-            pandoc "dist/release/$edition/C-with-Modern-Grammar.epub.md" \
+            pandoc "dist/release/$edition/Advanced-C11-Programming.epub.md" \
               --from markdown-raw_html \
               --to epub3 \
               --toc --toc-depth=3 \
               --split-level=1 \
               --resource-path="dist/release/$edition:release" \
               --css release/book.css \
-              --output "dist/release/$edition/C-with-Modern-Grammar.epub"
+              --output "dist/release/$edition/Advanced-C11-Programming.epub"
           done
 
       - name: Normalize EPUB navigation
@@ -163,21 +163,21 @@ jobs:
         run: |
           for edition in cn en; do
             java -jar "/tmp/epubcheck-${EPUBCHECK_VERSION}/epubcheck.jar" \
-              "dist/release/$edition/C-with-Modern-Grammar.epub"
+              "dist/release/$edition/Advanced-C11-Programming.epub"
           done
 
       - name: Render PDF from canonical HTML
         run: |
           for edition in cn en; do
             weasyprint \
-              "dist/release/$edition/C-with-Modern-Grammar.html" \
-              "dist/release/$edition/C-with-Modern-Grammar.pdf"
+              "dist/release/$edition/Advanced-C11-Programming.html" \
+              "dist/release/$edition/Advanced-C11-Programming.pdf"
           done
 
       - name: Record bilingual release provenance
         run: |
-          cp dist/cn/C-with-Modern-Grammar.md dist/release/cn/C-with-Modern-Grammar.md
-          cp dist/en/C-with-Modern-Grammar.md dist/release/en/C-with-Modern-Grammar.md
+          cp dist/cn/Advanced-C11-Programming.md dist/release/cn/Advanced-C11-Programming.md
+          cp dist/en/Advanced-C11-Programming.md dist/release/en/Advanced-C11-Programming.md
           cp SOURCE_SNAPSHOTS.md dist/release/SOURCE_SNAPSHOTS.md
           {
             echo "source_sha=${GITHUB_SHA}"
@@ -201,8 +201,8 @@ jobs:
           for edition in cn en; do
             for ext in md html epub pdf; do
               cp \
-                "dist/release/$edition/C-with-Modern-Grammar.$ext" \
-                "dist/release/C-with-Modern-Grammar-$edition.$ext"
+                "dist/release/$edition/Advanced-C11-Programming.$ext" \
+                "dist/release/Advanced-C11-Programming-$edition.$ext"
             done
           done
 
@@ -210,14 +210,14 @@ jobs:
         working-directory: dist/release
         run: |
           sha256sum \
-            C-with-Modern-Grammar-cn.md \
-            C-with-Modern-Grammar-cn.html \
-            C-with-Modern-Grammar-cn.epub \
-            C-with-Modern-Grammar-cn.pdf \
-            C-with-Modern-Grammar-en.md \
-            C-with-Modern-Grammar-en.html \
-            C-with-Modern-Grammar-en.epub \
-            C-with-Modern-Grammar-en.pdf \
+            Advanced-C11-Programming-cn.md \
+            Advanced-C11-Programming-cn.html \
+            Advanced-C11-Programming-cn.epub \
+            Advanced-C11-Programming-cn.pdf \
+            Advanced-C11-Programming-en.md \
+            Advanced-C11-Programming-en.html \
+            Advanced-C11-Programming-en.epub \
+            Advanced-C11-Programming-en.pdf \
             SOURCE_SNAPSHOTS.md \
             RENDERER_VERSIONS.txt \
             > SHA256SUMS.txt
@@ -225,24 +225,24 @@ jobs:
       - name: Upload bilingual release-format artifact
         uses: actions/upload-artifact@v4
         with:
-          name: c-with-modern-grammar-bilingual-release-formats
+          name: advanced-c11-programming-bilingual-release-formats
           path: |
-            dist/release/cn/C-with-Modern-Grammar.md
-            dist/release/cn/C-with-Modern-Grammar.html
-            dist/release/cn/C-with-Modern-Grammar.epub
-            dist/release/cn/C-with-Modern-Grammar.pdf
-            dist/release/en/C-with-Modern-Grammar.md
-            dist/release/en/C-with-Modern-Grammar.html
-            dist/release/en/C-with-Modern-Grammar.epub
-            dist/release/en/C-with-Modern-Grammar.pdf
-            dist/release/C-with-Modern-Grammar-cn.md
-            dist/release/C-with-Modern-Grammar-cn.html
-            dist/release/C-with-Modern-Grammar-cn.epub
-            dist/release/C-with-Modern-Grammar-cn.pdf
-            dist/release/C-with-Modern-Grammar-en.md
-            dist/release/C-with-Modern-Grammar-en.html
-            dist/release/C-with-Modern-Grammar-en.epub
-            dist/release/C-with-Modern-Grammar-en.pdf
+            dist/release/cn/Advanced-C11-Programming.md
+            dist/release/cn/Advanced-C11-Programming.html
+            dist/release/cn/Advanced-C11-Programming.epub
+            dist/release/cn/Advanced-C11-Programming.pdf
+            dist/release/en/Advanced-C11-Programming.md
+            dist/release/en/Advanced-C11-Programming.html
+            dist/release/en/Advanced-C11-Programming.epub
+            dist/release/en/Advanced-C11-Programming.pdf
+            dist/release/Advanced-C11-Programming-cn.md
+            dist/release/Advanced-C11-Programming-cn.html
+            dist/release/Advanced-C11-Programming-cn.epub
+            dist/release/Advanced-C11-Programming-cn.pdf
+            dist/release/Advanced-C11-Programming-en.md
+            dist/release/Advanced-C11-Programming-en.html
+            dist/release/Advanced-C11-Programming-en.epub
+            dist/release/Advanced-C11-Programming-en.pdf
             dist/release/SOURCE_SNAPSHOTS.md
             dist/release/RENDERER_VERSIONS.txt
             dist/release/SHA256SUMS.txt
@@ -255,14 +255,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           files=(
-            dist/release/C-with-Modern-Grammar-cn.md
-            dist/release/C-with-Modern-Grammar-cn.html
-            dist/release/C-with-Modern-Grammar-cn.epub
-            dist/release/C-with-Modern-Grammar-cn.pdf
-            dist/release/C-with-Modern-Grammar-en.md
-            dist/release/C-with-Modern-Grammar-en.html
-            dist/release/C-with-Modern-Grammar-en.epub
-            dist/release/C-with-Modern-Grammar-en.pdf
+            dist/release/Advanced-C11-Programming-cn.md
+            dist/release/Advanced-C11-Programming-cn.html
+            dist/release/Advanced-C11-Programming-cn.epub
+            dist/release/Advanced-C11-Programming-cn.pdf
+            dist/release/Advanced-C11-Programming-en.md
+            dist/release/Advanced-C11-Programming-en.html
+            dist/release/Advanced-C11-Programming-en.epub
+            dist/release/Advanced-C11-Programming-en.pdf
             dist/release/SOURCE_SNAPSHOTS.md
             dist/release/RENDERER_VERSIONS.txt
             dist/release/SHA256SUMS.txt
@@ -271,7 +271,7 @@ jobs:
             gh release upload "$GITHUB_REF_NAME" "${files[@]}" --clobber
           else
             gh release create "$GITHUB_REF_NAME" "${files[@]}" \
-              --title "C with Modern Grammar ${GITHUB_REF_NAME}" \
+              --title "Advanced C11 Programming ${GITHUB_REF_NAME}" \
               --generate-notes \
               --notes "Chinese and English Markdown/HTML/EPUB/PDF formats were rendered from the same validated source commit. Implementation provenance is attached in SOURCE_SNAPSHOTS.md; renderer versions and SHA-256 checksums are attached alongside it."
           fi

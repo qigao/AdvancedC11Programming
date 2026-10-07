@@ -2,6 +2,10 @@
 
 本文件定义下一阶段的全书结构与写作约束。
 
+书名：**Advanced C11 Programming: From Macros to Modern Programming Models**；中文版：**《C11 高级编程：从宏到现代编程模型》**。封面说明为 **Metaprogramming, Reflection, Streaming, and Reactive Programming**，对应“元编程、反射、流式与响应式编程”。
+
+命名统一使用组件名：元编程、RAII、Reflection 使用 **CMeta**，`cmeta_plugin_*` 接口使用 **CMeta Plugin**，执行语义使用 **CFlow**。**Salts** 只用于仓库、发行包、源码快照及真实构建标识；保留 `find_package(Salts)`、`Salts::CMeta`、`Salts::CFlow`、`Salts::Plugin` 等精确拼写。正文称呼与代码中的 `cmeta_*` / `CMETA_*` 对应，不以发行包名称代替组件名称。
+
 这本书不是 CMeta API reference，不是 Lean 教材，不是 RPC/Plugin/WASM 框架说明，也不是“如何用宏模拟 C++”。
 
 它回答一个更具体的问题：

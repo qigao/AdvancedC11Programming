@@ -2,6 +2,8 @@
 
 本模板用于约束下一轮章节重写。
 
+命名规则：元编程、RAII、Reflection 写作 **CMeta**，`cmeta_plugin_*` 接口写作 **CMeta Plugin**；CFlow、DataBind 等保留各自组件名。**Salts** 仅指仓库、发行包、源码快照或真实 CMake 标识。公共符号按固定快照使用 `cmeta_*` / `CMETA_*`，保留 `find_package(Salts)` 与 `Salts::*` 导入目标，不因正文名称统一而改写构建 API。
+
 核心规则：
 
 > **Code / pseudocode / flow / logic first. Prose only connects artifacts.**
