@@ -31,6 +31,29 @@ function(book_expect_c_compile variable expected source)
 endfunction()
 
 book_expect_c_compile(
+  BOOK_CONST_REQUIRE_FALSE
+  FALSE
+  [=[
+#include <cmeta/compiler.h>
+int main(void) {
+    return 1 + CMETA_CONST_REQUIRE(0);
+}
+]=])
+
+book_expect_c_compile(
+  BOOK_CONTAINER_OF_WRONG_MEMBER_TYPE
+  FALSE
+  [=[
+#include <cmeta/container_of.h>
+typedef struct book_owner { long member; } book_owner;
+int main(void) {
+    int value = 0;
+    book_owner *owner = cmeta_container_of_as(&value, book_owner, long, member);
+    return owner != 0;
+}
+]=])
+
+book_expect_c_compile(
   BOOK_TYPEFUNCTION_DECLARED_KEY
   TRUE
   [=[
