@@ -101,7 +101,7 @@ int main(void)
         DATA_BIND_BINDING_CALL_FRAME_INIT;
     DataBindNativeOptions options =
         DATA_BIND_NATIVE_OPTIONS_INIT;
-    book_input input = {{CSERDE_UINT}, 0};
+    book_input input = {0};
     unsigned char workspace[4096];
     AddRequest_t request = {0};
     AddResponse_t response = {0};
