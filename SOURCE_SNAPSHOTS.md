@@ -7,9 +7,9 @@ The snapshots below are the reproducible reference points used when the manuscri
 ## Salts
 
 - Repository: `qigao/salts`
-- Edition implementation snapshot: `ad389928b437c0612c1c60844fe53677f3ed27a6`
-- Used primarily by Chapters 2–12 and by the Salts side of Chapter 13.
-- Covers the CMeta/CFlow/CSerde/CBind implementation and `formal/cmeta_cflow_calculus` proof package referenced by this edition.
+- Edition implementation snapshot: `a650262031e9b3e5f11a227a7911a75db9ae1fb8`
+- Used primarily by Chapters 1–12 and by the Salts side of Chapter 13.
+- Covers the Salts 2.1.0 preparation baseline, including the post-#976 finite PP/compiler kernel, canonical `cmeta_type` routing, native-data reflection, CMeta/CFlow implementation, and `formal/cmeta_cflow_calculus` proof package referenced by this edition.
 - The same snapshot also anchors Part III's concrete NativeIO/CNet, CSTL, TinyTest/TinyMock, and CFlow I/O examples; those examples are not inferred from moving `master`.
 
 The Salts repository may move beyond this commit. Statements such as “the implementation in this edition” refer to the snapshot above, not necessarily the latest `master`.
