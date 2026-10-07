@@ -97,34 +97,102 @@ logical contract              native implementation
 
 # Part I — Native Semantic IR
 
-Part I 不需要 Lean 才成立。
+Part I 不需要 Lean 才成立，也不要求一套新的 C source language。
 
 它回答：
 
-> **同一个 C 事实为什么会被写很多次，以及怎样把这些事实收成一个有限 native semantic model。**
+> **普通 C、static inline、有限 macro、compiler capability 与 Reflection 应怎样分工，才能把重复而稳定的 native knowledge 提前到构建期，同时让 hot path 继续执行普通 C？**
 
-## Chapter 1 — 从重复代码到重复知识
+Part I 的新入口是 Linux-style Modern C：
 
-先从普通宏展开。
-
-必须保留真实 C：
-
-~~~c
-typedef struct IntVec { ... } IntVec;
-typedef struct DoubleVec { ... } DoubleVec;
+~~~text
+ordinary C
+    |
+    +-- normal function / static inline
+    |       typed behavior
+    |
+    +-- finite macro / PP
+    |       tokens / declarations / schema replay
+    |
+    +-- compiler capability
+    |       typeof / same-type / cleanup / section
+    |
+    '-- canonical Reflection
+            stable semantic truth
+                |
+        +-------+-------+
+        |               |
+   direct typed C   dynamic boundary
+                        |
+                 validate/admit once
 ~~~
 
-再展示宏复用后新的重复：
+这里必须反复强调：
 
-~~~c
-#define DECLARE_VEC(Name, T) ...
-#define DECLARE_LIST(Name, T) ...
-#define DECLARE_OPTION(Name, T) ...
+> **Reflection does not imply dynamic dispatch.**
+
+CMeta Native Semantic IR 可以直接通过普通 C declaration、macro-generated metadata 与 static-inline accessor 暴露。可选 source lowering 只能是 syntax frontend，不能成为普通 C consumer 使用 CMeta 的前置条件。
+
+## Chapter 1 — 从 Linux-style C 到 CMeta
+
+先从普通函数开始，而不是先从 DSL 开始。
+
+第一条判断：
+
+~~~text
+Can a normal C function express it?
+        yes -> normal function / static inline
+
+Need tokens, declarations, identifiers or schema replay?
+        yes -> finite macro
+
+Need native compiler knowledge?
+        yes -> capability-gated compiler abstraction
+
+Need stable meaning shared by several consumers?
+        yes -> canonical Reflection
 ~~~
 
-本章结论：
+必须展示：
 
-> **宏可以生成代码，但真正值得抽象的是稳定事实。**
+~~~c
+static inline int int_max(int a, int b)
+{
+    return a > b ? a : b;
+}
+~~~
+
+并与可能重复求值的 expression macro 对比。
+
+然后展示 production PP/compiler primitives，例如：
+
+~~~c
+CMETA_PP_PAIR_MAP_N(...)
+CMETA_PP_MAP_COMMA_N(...)
+CMETA_PP_UNIQUE(...)
+
+CMETA_NATIVE_TYPEOF(expr)
+CMETA_SAME_TYPE(a, b)
+CMETA_AUTO(name, expr)
+CMETA_CONST_REQUIRE(condition)
+~~~
+
+以及 type/layout 例子：
+
+~~~c
+cmeta_container_of(ptr, Owner, member)
+~~~
+
+本章结论不再是“宏不够，所以离开宏”，而是：
+
+~~~text
+facts once
+   -> macros generate structure
+   -> static inline preserves typed C semantics
+   -> Reflection preserves meaning
+   -> compiler removes abstraction
+   -> ordinary C executes
+~~~
 
 ## Chapter 2 — Generic / Struct / Traits：让类型事实只写一次
 
