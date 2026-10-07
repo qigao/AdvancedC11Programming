@@ -318,6 +318,14 @@ target_link_libraries(
     Salts::CFlow)
 
 book_qualification_gate(
+  book_ch06_normalize_idempotence
+  ch06_normalize_idempotence.c)
+target_link_libraries(
+  book_ch06_normalize_idempotence
+  PRIVATE
+    Salts::CFlow)
+
+book_qualification_gate(
   book_ch13_parse_u64
   ch13_parse_u64.c)
 
