@@ -334,6 +334,33 @@ target_link_libraries(
   PRIVATE
     Salts::CFlow)
 
+salts_idl_target(
+  TARGET book_databind_service
+  IDL "${CMAKE_CURRENT_SOURCE_DIR}/ch08_databind_service.schema"
+  ARTIFACT_NAME "book_service"
+  ARTIFACTS NATIVE)
+
+target_sources(
+  ${book_databind_service_NATIVE_TARGET}
+  PRIVATE
+    ch08_databind_service_business.c)
+
+book_qualification_gate(
+  book_ch08_databind_binding_plan
+  ch08_databind_binding_plan.c)
+target_link_libraries(
+  book_ch08_databind_binding_plan
+  PRIVATE
+    Salts::DataBind
+    ${book_databind_service_NATIVE_TARGET})
+target_include_directories(
+  book_ch08_databind_binding_plan
+  PRIVATE
+    "${book_databind_service_GENERATED_DIR}")
+add_dependencies(
+  book_ch08_databind_binding_plan
+  book_databind_service_idl_codegen)
+
 book_qualification_gate(
   book_ch08_databind_public_sdk
   ch08_databind_public_sdk.c)
