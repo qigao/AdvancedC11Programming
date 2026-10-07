@@ -444,21 +444,25 @@ static int book_run_success(
     actions_before_terminal_send =
         atomic_load(&probe.actions);
 
+    /*
+     * DONE stops Machine small-step execution, but the producer mailbox is a
+     * separate admission authority. It remains open until explicit close.
+     */
     if (cflow_machine_instance_try_send(
             &instance,
-            &event) != CFLOW_MAILBOX_CLOSED) {
+            &event) != CFLOW_MAILBOX_OK) {
         rc = 51;
         goto done;
     }
 
-    if (atomic_load(&probe.actions) !=
-        actions_before_terminal_send) {
+    if (!cflow_executor_wait_idle(executor)) {
         rc = 52;
         goto done;
     }
 
-    if (cflow_machine_instance_current_state(
-            &instance) != 20u) {
+    if (atomic_load(&probe.actions) !=
+        actions_before_terminal_send ||
+        cflow_machine_instance_current_state(&instance) != 20u) {
         rc = 53;
         goto done;
     }
@@ -471,6 +475,18 @@ static int book_run_success(
             sizeof(state_value)) ||
         state_value != 8L) {
         rc = 54;
+        goto done;
+    }
+
+    cflow_machine_instance_close(&instance);
+
+    if (cflow_machine_instance_try_send(
+            &instance,
+            &event) != CFLOW_MAILBOX_CANCELLED &&
+        cflow_machine_instance_try_send(
+            &instance,
+            &event) != CFLOW_MAILBOX_CLOSED) {
+        rc = 55;
         goto done;
     }
 
