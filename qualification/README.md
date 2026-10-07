@@ -19,6 +19,7 @@ Current gates:
 
 - `ch01_cmeta_pp.c`: finite pair mapping, separator-aware mapping, explicit zero-arity behavior, tuple projection, and expansion-safe stringify through the installed CMeta PP surface;
 - `ch02_type_identity_*.c`: independent translation units own distinct descriptor/identity objects for the same stable semantic type; semantic equality succeeds across those TU boundaries, while an otherwise identical layout with a different stable ID remains unequal;
+- `ch03_lifecycle_binding.c`: validate raw Data/lifecycle metadata once into an admitted binding, then reuse that capability for init/move/restore; mismatched native layout fails closed and clears the rejected binding;
 - `ch03_exact_invoke.c`: exact thunk success, aliasing, and fail-before-call behavior;
 - `ch05_stream_graph.c`: Stream façade builds the expected typed Graph IR;
 - `ch13_parse_u64.c`: bounded decimal conversion and failure-atomic output.
@@ -30,3 +31,8 @@ private implementation headers.
 The Chapter 2 gate deliberately separates **address identity** from **semantic
 identity**. Matching descriptor or identity pointer values are neither expected
 nor required across translation units.
+
+The lifecycle gate models a second modern-C boundary: raw metadata is validated
+at admission, while repeated typed operations reuse the admitted capability. It
+does not create a universal destroy abstraction or infer ownership from C
+spelling.
