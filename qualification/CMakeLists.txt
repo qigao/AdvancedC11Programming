@@ -19,6 +19,14 @@ function(book_qualification_gate target)
 endfunction()
 
 book_qualification_gate(
+  book_ch01_cmeta_pp
+  ch01_cmeta_pp.c)
+target_link_libraries(
+  book_ch01_cmeta_pp
+  PRIVATE
+    Salts::CMeta)
+
+book_qualification_gate(
   book_ch03_exact_invoke
   ch03_exact_invoke.c)
 target_link_libraries(
