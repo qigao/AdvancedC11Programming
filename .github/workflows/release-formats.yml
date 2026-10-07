@@ -7,6 +7,7 @@ on:
       - ".github/workflows/release-formats.yml"
       - "release/**"
       - "scripts/build_book.py"
+      - "scripts/book_structure.py"
       - "scripts/validate_book.py"
       - "scripts/prepare_release.py"
       - "scripts/validate_release.py"
