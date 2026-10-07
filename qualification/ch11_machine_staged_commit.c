@@ -445,25 +445,21 @@ static int book_run_success(
         atomic_load(&probe.actions);
 
     /*
-     * DONE stops Machine small-step execution, but the producer mailbox is a
-     * separate admission authority. It remains open until explicit close.
+     * A transition into DONE commits state, marks the instance terminal, and
+     * cancels the instance-owned mailbox. Producer admission therefore
+     * observes CANCELLED rather than running another small step.
      */
     if (cflow_machine_instance_try_send(
             &instance,
-            &event) != CFLOW_MAILBOX_OK) {
+            &event) != CFLOW_MAILBOX_CANCELLED) {
         rc = 51;
-        goto done;
-    }
-
-    if (!cflow_executor_wait_idle(executor)) {
-        rc = 52;
         goto done;
     }
 
     if (atomic_load(&probe.actions) !=
         actions_before_terminal_send ||
         cflow_machine_instance_current_state(&instance) != 20u) {
-        rc = 53;
+        rc = 52;
         goto done;
     }
 
@@ -474,23 +470,8 @@ static int book_run_success(
             &state_value,
             sizeof(state_value)) ||
         state_value != 8L) {
-        rc = 54;
+        rc = 53;
         goto done;
-    }
-
-    cflow_machine_instance_close(&instance);
-
-    {
-        const cflow_mailbox_status terminal_admission =
-            cflow_machine_instance_try_send(
-                &instance,
-                &event);
-
-        if (terminal_admission != CFLOW_MAILBOX_CANCELLED &&
-            terminal_admission != CFLOW_MAILBOX_CLOSED) {
-            rc = 55;
-            goto done;
-        }
     }
 
 done:
