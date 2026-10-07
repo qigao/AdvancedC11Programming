@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 static bool book_parse_u64(const char *text, uint64_t *out)
