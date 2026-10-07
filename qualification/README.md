@@ -26,6 +26,7 @@ Current gates:
 - `ch03_receiver_resolution.c`: receiver metadata remains an ordinary first C parameter while the public resolver accepts the correct receiver/method/argument relation and rejects wrong receiver types, unknown operations, and wrong argument types;
 - `ch03_lifecycle_binding.c`: validate raw Data/lifecycle metadata once into an admitted binding, then reuse that capability for init/move/restore; mismatched native layout fails closed and clears the rejected binding;
 - `ch03_exact_invoke.c`: exact thunk success, aliasing, and fail-before-call behavior;
+- `ch04_graph_admission.c`: low-level typed Graph builders reject an incompatible edge without advancing the version token, while successful mutation changes version and clone produces an independent structurally equal snapshot that remains unchanged after source-only mutation;
 - `ch05_stream_graph.c`: Stream façade builds the expected typed Graph IR;
 - `ch13_plugin_exact_abi.c`: current Plugin manifest validates only at the exact public ABI epoch and exact manifest layout; a different host ABI/query, ABI epoch, or manifest size is rejected with no negotiation or fallback;
 - `ch13_parse_u64.c`: bounded decimal conversion and failure-atomic output.
@@ -54,3 +55,5 @@ spelling.
 The lexical-scope gate treats scope cleanup as structured C control flow over canonical lifecycle callbacks. It does not introduce a heap registry, infer ownership, or claim that cross-scope jumps can be made safe automatically.
 
 The bind/capture gate treats a closure as a finite generated call projection, not a hidden ownership system. Value capture copies admitted scalar bytes into the callable; borrowed pointers, provider lifetime and Plugin leases remain the caller's explicit responsibility.
+
+The Graph-admission gate treats Graph as control-plane IR: builder calls are the mutation authority, version binds downstream knowledge to one process-local snapshot, and runtime values/scheduler state remain outside the Graph.
