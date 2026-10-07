@@ -37,8 +37,12 @@ The SaltsUtils repository may move beyond this commit. Chapter 8/13 API names an
 ## CHTTP
 
 - Repository: `qigao/chttp`
-- Edition implementation snapshot: `5e9f388c2009836d024e0fcd5a3ff8f7c2d49e39`
-- Used by the RPC application case in Chapter 13.
+- Edition implementation snapshot: `2e950615a7f47190258c4cb1d2cdab32e80a05b8`
+- Used by Chapter 8/13 for the concrete HTTP/RPC runtime projection examples.
+- Anchors installed `CHttp::Service` and `CHttp::RpcService`, mount-time FunctionDesc/FunctionAbi/native-layout admission, direct/CFlow/Plugin deferred execution modes, hot-path no-Reflection/no-dynamic-ABI qualification, deferred domain-lifetime gating, single-materialization HTTP egress, and generated-plan typed RPC client/server behavior.
+- Also anchors the DataBind HTTP OpenAPI provider used to demonstrate that runtime route semantics and documentation are derived from the same HTTP projection facts.
+
+The CHttp repository may move beyond this commit. Chapter 8/13 CHttp API names and lifecycle claims marked as current in this edition refer to this snapshot.
 
 ## Original manuscript migration
 
