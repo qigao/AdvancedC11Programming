@@ -3,12 +3,113 @@ cmake_minimum_required(VERSION 3.25)
 project(AdvancedC11BookQualification LANGUAGES C)
 
 include(CTest)
+include(CheckCSourceCompiles)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 find_package(Salts CONFIG REQUIRED)
+
+set(CMAKE_REQUIRED_LIBRARIES Salts::CMeta)
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+  set(CMAKE_REQUIRED_FLAGS "-Wall -Wextra -Werror -pedantic")
+endif()
+
+function(book_expect_c_compile variable expected source)
+  unset(${variable} CACHE)
+  check_c_source_compiles("${source}" ${variable})
+  if(${expected})
+    if(NOT ${variable})
+      message(FATAL_ERROR "expected C source to compile: ${variable}")
+    endif()
+  else()
+    if(${variable})
+      message(FATAL_ERROR "expected C source to fail translation: ${variable}")
+    endif()
+  endif()
+endfunction()
+
+book_expect_c_compile(
+  BOOK_CONST_REQUIRE_FALSE
+  FALSE
+  [=[
+#include <cmeta/compiler.h>
+int main(void) {
+    return 1 + CMETA_CONST_REQUIRE(0);
+}
+]=])
+
+book_expect_c_compile(
+  BOOK_CONTAINER_OF_WRONG_MEMBER_TYPE
+  FALSE
+  [=[
+#include <cmeta/container_of.h>
+typedef struct book_owner { long member; } book_owner;
+int main(void) {
+    int value = 0;
+    book_owner *owner = cmeta_container_of_as(&value, book_owner, long, member);
+    return owner != 0;
+}
+]=])
+
+book_expect_c_compile(
+  BOOK_TYPEFUNCTION_DECLARED_KEY
+  TRUE
+  [=[
+#include <cmeta/compute.h>
+TypeFunction(BookDeclared,
+    (int, double, double));
+typedef TypeEval(BookDeclared, int, double) book_result;
+_Static_assert(sizeof(book_result) == sizeof(double), "declared token key");
+int main(void) { return 0; }
+]=])
+
+book_expect_c_compile(
+  BOOK_TYPEFUNCTION_IDENTICAL_DUPLICATE
+  TRUE
+  [=[
+#include <cmeta/compute.h>
+TypeFunction(BookSame,
+    (int, double, double),
+    (int, double, double));
+typedef TypeEval(BookSame, int, double) book_result;
+int main(void) { return sizeof(book_result) == sizeof(double) ? 0 : 1; }
+]=])
+
+book_expect_c_compile(
+  BOOK_TYPEFUNCTION_MISSING_KEY
+  FALSE
+  [=[
+#include <cmeta/compute.h>
+TypeFunction(BookMissing,
+    (int, double, double));
+typedef TypeEval(BookMissing, float, double) book_result;
+int main(void) { return (int)sizeof(book_result); }
+]=])
+
+book_expect_c_compile(
+  BOOK_TYPEFUNCTION_ALIAS_KEY
+  FALSE
+  [=[
+#include <cmeta/compute.h>
+typedef int book_int;
+TypeFunction(BookAlias,
+    (int, double, double));
+typedef TypeEval(BookAlias, book_int, double) book_result;
+int main(void) { return (int)sizeof(book_result); }
+]=])
+
+book_expect_c_compile(
+  BOOK_TYPEFUNCTION_CONFLICTING_RESULT
+  FALSE
+  [=[
+#include <cmeta/compute.h>
+TypeFunction(BookConflict,
+    (int, double, double),
+    (int, double, long));
+int main(void) { return 0; }
+]=])
 
 function(book_qualification_gate target)
   add_executable(${target} ${ARGN})
@@ -17,6 +118,14 @@ function(book_qualification_gate target)
   endif()
   add_test(NAME ${target} COMMAND ${target})
 endfunction()
+
+book_qualification_gate(
+  book_ch01_compiler_skills
+  ch01_compiler_skills.c)
+target_link_libraries(
+  book_ch01_compiler_skills
+  PRIVATE
+    Salts::CMeta)
 
 book_qualification_gate(
   book_ch01_cmeta_pp
