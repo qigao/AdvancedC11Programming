@@ -44,6 +44,8 @@ The SaltsUtils repository may move beyond this commit. Chapter 8/13 API names an
 
 The CHttp repository may move beyond this commit. Chapter 8/13 CHttp API names and lifecycle claims marked as current in this edition refer to this snapshot.
 
+The pinned [CHttp Service header](https://github.com/qigao/chttp/blob/2e950615a7f47190258c4cb1d2cdab32e80a05b8/service/include/chttp_service/service.h) still uses pre-migration Plugin type names. Chapter 8 labels its mount struct as an illustration normalized to the edition's `cmeta_plugin_registry` / `cmeta_plugin_ref` names, not a verbatim excerpt. These independently pinned repositories provide implementation evidence; they do not establish a qualified combined SDK. CHttp's Plugin API migration and a combined installed-consumer build remain necessary before claiming compatibility with this edition's Salts / SaltsUtils snapshots.
+
 ## Original manuscript migration
 
 The initial 15-chapter manuscript was extracted from:
