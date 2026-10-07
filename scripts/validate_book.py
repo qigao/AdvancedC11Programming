@@ -163,6 +163,16 @@ def validate_chapter(path: Path, edition: str, expected_number: int) -> None:
         )
 
     unique_sections = list(dict.fromkeys(main_h2))
+    if len(unique_sections) != len(main_h2):
+        duplicates = [
+            section
+            for index, section in enumerate(main_h2)
+            if section in main_h2[:index]
+        ]
+        raise ValidationError(
+            f"{path.name}: duplicate numbered H2 section(s): {duplicates}"
+        )
+
     expected = list(range(1, len(unique_sections) + 1))
     if unique_sections != expected:
         raise ValidationError(
@@ -179,6 +189,17 @@ def validate_chapter(path: Path, edition: str, expected_number: int) -> None:
 
     for main, children in numbered_h3.items():
         unique_children = list(dict.fromkeys(children))
+        if len(unique_children) != len(children):
+            duplicates = [
+                child
+                for index, child in enumerate(children)
+                if child in children[:index]
+            ]
+            raise ValidationError(
+                f"{path.name}: duplicate numbered H3 subsection(s) under "
+                f"{main}: {duplicates}"
+            )
+
         child_expected = list(range(1, len(unique_children) + 1))
         if unique_children != child_expected:
             raise ValidationError(
