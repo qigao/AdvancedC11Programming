@@ -21,6 +21,7 @@ Current gates:
 - `ch01_cmeta_pp.c`: finite pair mapping, separator-aware mapping, explicit zero-arity behavior, tuple projection, and expansion-safe stringify through the installed CMeta PP surface;
 - `ch02_declaration_metadata.c`: one declaration supplies native struct layout plus field metadata, existing native records are reflected without rewriting their declaration, and one tagged traits declaration supplies both capability flags and callback slots;
 - `ch02_type_identity_*.c`: independent translation units own distinct descriptor/identity objects for the same stable semantic type; semantic equality succeeds across those TU boundaries, while an otherwise identical layout with a different stable ID remains unequal;
+- `ch03_bind_capture.c`: binding captures a trivial scalar as a fixed inline snapshot, preserves that value after the original capture struct changes, and produces checked/admitted invokable calls with identical results; pointer-as-value capture remains a compile-time error;
 - `ch03_scope_cleanup.c`: structured lexical scope initializes managed automatic values in declaration order, preserves body/failure status, and restores the live prefix in exact LIFO order on both normal body exit and partial initialization failure;
 - `ch03_receiver_resolution.c`: receiver metadata remains an ordinary first C parameter while the public resolver accepts the correct receiver/method/argument relation and rejects wrong receiver types, unknown operations, and wrong argument types;
 - `ch03_lifecycle_binding.c`: validate raw Data/lifecycle metadata once into an admitted binding, then reuse that capability for init/move/restore; mismatched native layout fails closed and clears the rejected binding;
@@ -51,3 +52,5 @@ does not create a universal destroy abstraction or infer ownership from C
 spelling.
 
 The lexical-scope gate treats scope cleanup as structured C control flow over canonical lifecycle callbacks. It does not introduce a heap registry, infer ownership, or claim that cross-scope jumps can be made safe automatically.
+
+The bind/capture gate treats a closure as a finite generated call projection, not a hidden ownership system. Value capture copies admitted scalar bytes into the callable; borrowed pointers, provider lifetime and Plugin leases remain the caller's explicit responsibility.
