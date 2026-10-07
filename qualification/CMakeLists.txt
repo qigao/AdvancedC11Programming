@@ -152,6 +152,41 @@ cmeta_traits(book_bad,
 int main(void) { return 0; }
 ]=])
 
+book_expect_c_compile(
+  BOOK_BIND_POINTER_AS_VALUE_CAPTURE
+  FALSE
+  [=[
+#include <cmeta/bind.h>
+int book_bad_source(void *pointer, int value);
+FunctionDeclAsAbiResult(
+    value,
+    int,
+    &cmeta_type_int,
+    CMETA_ABI_SCALAR,
+    CMETA_RESULT_VALUE,
+    book_bad_source,
+    (void *, pointer, CMETA_PARAM_IN | CMETA_PARAM_BORROWED,
+     &cmeta_type_void_ptr, CMETA_ABI_OBJECT_POINTER),
+    (int, value, CMETA_PARAM_IN,
+     &cmeta_type_int, CMETA_ABI_SCALAR));
+FunctionBindDeclAsAbiResult(
+    value,
+    int,
+    &cmeta_type_int,
+    CMETA_ABI_SCALAR,
+    CMETA_RESULT_VALUE,
+    book_bad_bound,
+    book_bad_source,
+    CMETA_SIG_U_I_I,
+    (value,
+        (void *, pointer, CMETA_PARAM_IN | CMETA_PARAM_BORROWED,
+         &cmeta_type_void_ptr, CMETA_ABI_OBJECT_POINTER)),
+    (arg,
+        (int, value, CMETA_PARAM_IN,
+         &cmeta_type_int, CMETA_ABI_SCALAR)));
+int main(void) { return 0; }
+]=])
+
 function(book_qualification_gate target)
   add_executable(${target} ${ARGN})
   if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
@@ -191,6 +226,14 @@ book_qualification_gate(
   ch02_type_identity_b.c)
 target_link_libraries(
   book_ch02_type_identity
+  PRIVATE
+    Salts::CMeta)
+
+book_qualification_gate(
+  book_ch03_bind_capture
+  ch03_bind_capture.c)
+target_link_libraries(
+  book_ch03_bind_capture
   PRIVATE
     Salts::CMeta)
 
