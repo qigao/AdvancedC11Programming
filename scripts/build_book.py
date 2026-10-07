@@ -58,6 +58,8 @@ def front_matter(edition: str) -> str:
 title: "{meta['title']}"
 subtitle: "{meta['subtitle']}"
 description: "{meta['tagline']}"
+abstract: "{meta['tagline']}"
+abstract-title: ""
 lang: "{meta['lang']}"
 rights: "Apache-2.0"
 ---

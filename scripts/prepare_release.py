@@ -98,12 +98,13 @@ def main() -> None:
     prepared = prepared.replace(
         "<!-- chapter-break -->", "::: {.chapter-break}\n:::"
     )
-    # Pandoc renders title/subtitle from metadata. Keep the tagline in the body
-    # while removing the Markdown-only title block in either edition.
+    # Pandoc renders the title, subtitle and short abstract on its title page.
+    # Remove the Markdown-only display block to avoid repeating it after the TOC.
     meta = EDITION_META[edition]
     prepared, replacements = re.subn(
         rf"(?m)^# {re.escape(meta['title'])}\n\n"
-        rf"\*\*{re.escape(meta['subtitle'])}\*\*\n",
+        rf"\*\*{re.escape(meta['subtitle'])}\*\*\n\n"
+        rf"\*{re.escape(meta['tagline'])}\*\n",
         "", prepared, count=1,
     )
     if replacements != 1:
