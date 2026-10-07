@@ -4,9 +4,9 @@
 Editable chapter sources live under cn/ and en/. Each edition owns a local
 BOOK_MANIFEST.txt containing stable ch-NN.md filenames.
 
-The Chinese edition remains the default so existing release tooling can call
-this script without arguments. A compatibility copy is also written to the
-legacy dist/C-with-Modern-Grammar.md path for the Chinese edition.
+The Chinese edition remains the default so release tooling can call this
+script without arguments. Its default manuscript copy is also written to
+dist/Advanced-C11-Programming.md.
 """
 
 from __future__ import annotations
@@ -16,18 +16,20 @@ from pathlib import Path
 
 from book_structure import ROOT, read_manifest, render_toc_body
 
-BOOK_NAME = "C-with-Modern-Grammar.md"
+BOOK_NAME = "Advanced-C11-Programming.md"
 
 EDITION_META = {
     "cn": {
         "lang": "zh-CN",
-        "title": "C with Modern Grammar",
-        "subtitle": "From Plain C to Typed and Verified Computation",
+        "title": "C11 高级编程",
+        "subtitle": "从宏到现代编程模型",
+        "tagline": "元编程、反射、流式与响应式编程",
     },
     "en": {
         "lang": "en-US",
-        "title": "C with Modern Grammar",
-        "subtitle": "From Plain C to Typed and Verified Computation",
+        "title": "Advanced C11 Programming",
+        "subtitle": "From Macros to Modern Programming Models",
+        "tagline": "Metaprogramming, Reflection, Streaming, and Reactive Programming",
     },
 }
 
@@ -55,13 +57,16 @@ def front_matter(edition: str) -> str:
     return f"""---
 title: "{meta['title']}"
 subtitle: "{meta['subtitle']}"
+description: "{meta['tagline']}"
 lang: "{meta['lang']}"
 rights: "Apache-2.0"
 ---
 
-# C with Modern Grammar
+# {meta['title']}
 
 **{meta['subtitle']}**
+
+*{meta['tagline']}*
 
 > This file is generated from the ordered chapter sources listed in
 > {edition}/BOOK_MANIFEST.txt. Edit the chapter files, not this artifact.
@@ -86,11 +91,11 @@ def main() -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(output_text, encoding="utf-8", newline="\n")
 
-    # Preserve the pre-edition canonical path for the Chinese release pipeline.
+    # Also expose the default Chinese edition at the top-level manuscript path.
     if edition == "cn":
-        legacy = ROOT / "dist" / BOOK_NAME
-        legacy.parent.mkdir(parents=True, exist_ok=True)
-        legacy.write_text(output_text, encoding="utf-8", newline="\n")
+        default_output = ROOT / "dist" / BOOK_NAME
+        default_output.parent.mkdir(parents=True, exist_ok=True)
+        default_output.write_text(output_text, encoding="utf-8", newline="\n")
 
     print(
         f"built {edition} edition: {output.relative_to(ROOT)} "

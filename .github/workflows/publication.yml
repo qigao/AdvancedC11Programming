@@ -47,7 +47,7 @@ jobs:
       - name: Upload manuscript
         uses: actions/upload-artifact@v4
         with:
-          name: c-with-modern-grammar-manuscript-${{ matrix.edition }}
-          path: dist/${{ matrix.edition }}/C-with-Modern-Grammar.md
+          name: advanced-c11-programming-manuscript-${{ matrix.edition }}
+          path: dist/${{ matrix.edition }}/Advanced-C11-Programming.md
           if-no-files-found: error
           retention-days: 14

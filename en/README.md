@@ -1,6 +1,6 @@
 # English Edition
 
-This directory contains the English edition of *C with Modern Grammar*.
+This directory contains the English edition of *Advanced C11 Programming: From Macros to Modern Programming Models*, covering metaprogramming, reflection, streaming, and reactive programming.
 
 Chapter filenames such as `ch-13.md` are stable source IDs, not visible chapter numbers. Publication order is defined by [BOOK_MANIFEST.txt](./BOOK_MANIFEST.txt), while the displayed chapter number comes from each file's H1.
 

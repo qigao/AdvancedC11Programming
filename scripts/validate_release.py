@@ -9,7 +9,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BOOK_NAME = "C-with-Modern-Grammar"
+BOOK_NAME = "Advanced-C11-Programming"
 
 
 def parse_args() -> argparse.Namespace:

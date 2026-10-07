@@ -1,6 +1,8 @@
-# C with Modern Grammar
+# Advanced C11 Programming
 
-**Know more before execution; do less at runtime**
+**From Macros to Modern Programming Models**
+
+*Metaprogramming, Reflection, Streaming, and Reactive Programming*
 
 [中文](./README_CN.md) | **English**
 

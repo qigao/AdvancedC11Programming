@@ -1,7 +1,7 @@
 {
   "theme": "neutral",
   "deterministicIds": true,
-  "deterministicIDSeed": "c-with-modern-grammar",
+  "deterministicIDSeed": "advanced-c11-programming",
   "fontFamily": "Noto Sans CJK SC, Source Han Sans SC, sans-serif",
   "flowchart": {
     "htmlLabels": false,

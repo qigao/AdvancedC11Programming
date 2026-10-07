@@ -10,7 +10,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BOOK_NAME = "C-with-Modern-Grammar"
+BOOK_NAME = "Advanced-C11-Programming"
 
 IMG_RE = re.compile(rb'<img\b(?P<attrs>[^>]*)/?>', re.IGNORECASE)
 ALT_RE = re.compile(rb'\balt="(?P<alt>[^"]*)"', re.IGNORECASE)
