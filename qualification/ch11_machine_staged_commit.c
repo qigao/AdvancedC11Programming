@@ -480,14 +480,17 @@ static int book_run_success(
 
     cflow_machine_instance_close(&instance);
 
-    if (cflow_machine_instance_try_send(
-            &instance,
-            &event) != CFLOW_MAILBOX_CANCELLED &&
-        cflow_machine_instance_try_send(
-            &instance,
-            &event) != CFLOW_MAILBOX_CLOSED) {
-        rc = 55;
-        goto done;
+    {
+        const cflow_mailbox_status terminal_admission =
+            cflow_machine_instance_try_send(
+                &instance,
+                &event);
+
+        if (terminal_admission != CFLOW_MAILBOX_CANCELLED &&
+            terminal_admission != CFLOW_MAILBOX_CLOSED) {
+            rc = 55;
+            goto done;
+        }
     }
 
 done:
