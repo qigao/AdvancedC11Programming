@@ -9,7 +9,7 @@ Chapter filenames such as `ch-13.md` are stable source IDs, not visible chapter 
 <!-- book-toc:start -->
 **Part I — Native Semantic IR**
 - [Chapter 1: From Linux-Style C to CMeta — Macros, static inline, and Zero-Runtime Abstraction](./ch-01.md)
-- [Chapter 2: From Macros to Generic — Collapse Repeated Type Contracts into One Definition](./ch-02.md)
+- [Chapter 2: A Finite Metaprogramming Kernel — Generic, Struct, Traits, and Type Relations](./ch-02.md)
 - [Chapter 3: From Function Pointers to Function Semantics — FunctionDesc, Callable, Lambda, and Bind](./ch-03.md)
 
 **Part II — Execution IR**
