@@ -27,6 +27,16 @@ target_link_libraries(
     Salts::CMeta)
 
 book_qualification_gate(
+  book_ch02_type_identity
+  ch02_type_identity_main.c
+  ch02_type_identity_a.c
+  ch02_type_identity_b.c)
+target_link_libraries(
+  book_ch02_type_identity
+  PRIVATE
+    Salts::CMeta)
+
+book_qualification_gate(
   book_ch03_exact_invoke
   ch03_exact_invoke.c)
 target_link_libraries(
