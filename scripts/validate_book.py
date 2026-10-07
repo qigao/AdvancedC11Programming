@@ -38,6 +38,9 @@ STALE_IDL_PUBLIC_SURFACE_RE = re.compile(
 STALE_CMETA_PUBLIC_SURFACE_RE = re.compile(
     r"(?:\bcmeta_type_id\s*\(|\bcmeta_function_contract_equal\s*\()"
 )
+STALE_PLUGIN_PUBLIC_SURFACE_RE = re.compile(
+    r"(?:\bsalts_plugin_[A-Za-z0-9_]*|\bSALTS_PLUGIN_[A-Za-z0-9_]*)"
+)
 LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 PART_RE = re.compile(r"^#{1,3}\s+(Part\s+[IVX]+\s+—\s+.+?)\s*$")
 
@@ -233,6 +236,10 @@ def validate_text_hygiene(path: Path) -> None:
     if STALE_CMETA_PUBLIC_SURFACE_RE.search(text):
         raise ValidationError(
             f"{path.name}: contains retired/nonexistent CMeta equality API"
+        )
+    if STALE_PLUGIN_PUBLIC_SURFACE_RE.search(text):
+        raise ValidationError(
+            f"{path.name}: contains retired pre-CMeta Plugin public prefix"
         )
 
 
