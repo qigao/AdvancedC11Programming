@@ -130,8 +130,8 @@ jobs:
           import json
           import os
           import shutil
+          import subprocess
           import urllib.request
-          import zipfile
           from pathlib import Path
 
           api = "https://api.github.com/repos/qigao/salts-utils/releases/latest"
@@ -166,13 +166,23 @@ jobs:
               shutil.copyfileobj(source, output)
 
           root = Path("/tmp/saltsutils-native")
-          with zipfile.ZipFile(package) as archive:
-              archive.extractall(root)
+          if root.exists():
+              shutil.rmtree(root)
+          root.mkdir(parents=True)
+          subprocess.run(
+              ["unzip", "-q", "-o", str(package), "-d", str(root)],
+              check=True,
+          )
 
           prefix = root / "sdk" / "linux-x64"
           config = prefix / "lib" / "cmake" / "SaltsUtils" / "SaltsUtilsConfig.cmake"
           if not config.is_file():
               raise SystemExit(f"missing installed SaltsUtils CMake package: {config}")
+          idlc = prefix / "bin" / "salts-idlc"
+          if not idlc.is_file() or not os.access(idlc, os.X_OK):
+              raise SystemExit(
+                  f"installed SaltsUtils host compiler is not executable: {idlc}"
+              )
 
           print(f"Using latest SaltsUtils release {release.get('tag_name')}: {assets[0]['name']}")
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
