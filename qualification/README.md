@@ -7,10 +7,10 @@ They serve a different purpose from `SOURCE_SNAPSHOTS.md`:
 - the edition snapshots are the fixed provenance for implementation claims in the book;
 - this directory is a compatibility/drift gate against the **latest released** `Salts.Native` SDK package.
 
-CI intentionally does not pin a package version. It downloads the latest GitHub
+CI intentionally does not pin a package version. At the start of each run it resolves the latest GitHub
 release asset, uses the matching `sdk/linux-x64` install tree through
 `CMAKE_PREFIX_PATH`, then builds and runs these programs as independent
-consumers.
+consumers. If the latest release cannot be resolved, downloaded, configured, or consumed, the gate fails; it does not fall back to an older package.
 
 A failure here means that a public SDK change has made one of the book's
 executable contracts stale. It does not silently rewrite the edition snapshot.
