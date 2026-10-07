@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.27)
 
 project(AdvancedC11BookQualification LANGUAGES C)
 
@@ -10,6 +10,22 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 find_package(Salts CONFIG REQUIRED)
+
+if(NOT DEFINED ENV{SALTS_UTILS_ROOT} OR
+   NOT IS_DIRECTORY "$ENV{SALTS_UTILS_ROOT}")
+  message(FATAL_ERROR
+    "SALTS_UTILS_ROOT must name the restored latest SaltsUtils SDK")
+endif()
+file(TO_CMAKE_PATH "$ENV{SALTS_UTILS_ROOT}" BOOK_SALTS_UTILS_ROOT)
+find_package(
+  SaltsUtils CONFIG REQUIRED
+  PATHS "${BOOK_SALTS_UTILS_ROOT}"
+  NO_DEFAULT_PATH
+  NO_CMAKE_FIND_ROOT_PATH)
+
+if(NOT TARGET Salts::DataBind)
+  message(FATAL_ERROR "latest SaltsUtils SDK is missing Salts::DataBind")
+endif()
 
 set(CMAKE_REQUIRED_LIBRARIES Salts::CMeta)
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
@@ -316,6 +332,33 @@ target_link_libraries(
   book_ch07_direct_no_fallback
   PRIVATE
     Salts::CFlow)
+
+salts_idl_target(
+  TARGET book_service
+  IDL "${CMAKE_CURRENT_SOURCE_DIR}/ch08_databind_service.schema"
+  ARTIFACT_NAME "book_service"
+  ARTIFACTS NATIVE)
+
+target_sources(
+  ${book_service_NATIVE_TARGET}
+  PRIVATE
+    ch08_databind_business.c)
+
+book_qualification_gate(
+  book_ch08_databind_binding
+  ch08_databind_binding.c)
+target_link_libraries(
+  book_ch08_databind_binding
+  PRIVATE
+    Salts::DataBind
+    ${book_service_NATIVE_TARGET})
+target_include_directories(
+  book_ch08_databind_binding
+  PRIVATE
+    "${book_service_GENERATED_DIR}")
+add_dependencies(
+  book_ch08_databind_binding
+  book_service_idl_codegen)
 
 book_qualification_gate(
   book_ch13_parse_u64
