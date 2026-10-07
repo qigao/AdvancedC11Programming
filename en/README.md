@@ -8,7 +8,7 @@ Chapter filenames such as `ch-13.md` are stable source IDs, not visible chapter 
 
 <!-- book-toc:start -->
 **Part I — Native Semantic IR**
-- [Chapter 1: Where CMeta Begins — The Pain of Writing C Macros](./ch-01.md)
+- [Chapter 1: From Linux-Style C to CMeta — Macros, static inline, and Zero-Runtime Abstraction](./ch-01.md)
 - [Chapter 2: From Macros to Generic — Collapse Repeated Type Contracts into One Definition](./ch-02.md)
 - [Chapter 3: From Function Pointers to Function Semantics — FunctionDesc, Callable, Lambda, and Bind](./ch-03.md)
 
