@@ -350,6 +350,14 @@ target_link_libraries(
     Salts::CFlow)
 
 book_qualification_gate(
+  book_ch10_executor_settlement
+  ch10_executor_settlement.c)
+target_link_libraries(
+  book_ch10_executor_settlement
+  PRIVATE
+    Salts::CFlow)
+
+book_qualification_gate(
   book_ch13_parse_u64
   ch13_parse_u64.c)
 

@@ -36,6 +36,7 @@ Current gates:
 - `ch06_authorized_rewrite.c`: an IDEMPOTENT endomap pair admits exactly one idempotent-map elimination with a bound proof-trace event, while behaviorally similar code without the property contract retains both callable applications and emits no semantic rewrite event;
 - `ch09_reactive_demand.c`: downstream demand limits emitted values exactly, remaining publisher values survive between requests, terminal completion occurs once, and post-terminal request returns CLOSED without producing more callbacks;
 - `ch09_wait_wake.c`: readiness Publisher WAIT preserves outstanding demand, wake permits retry without creating demand, later request resumes remaining values, and stale wake after terminal produces no callbacks;
+- `ch10_executor_settlement.c`: capacity-one manual Executor accepts one descriptor, rejects the next with FULL without invoking callbacks, settles accepted work exactly once through run+finalize, and rejects post-shutdown admission with CLOSED while preserving the settlement ledger;
 - `ch13_plugin_exact_abi.c`: current Plugin manifest validates only at the exact public ABI epoch and exact manifest layout; a different host ABI/query, ABI epoch, or manifest size is rejected with no negotiation or fallback;
 - `ch13_parse_u64.c`: bounded decimal conversion and failure-atomic output.
 
@@ -81,3 +82,5 @@ The authorized-rewrite gate keeps metadata claims, optimizer actions, and rewrit
 The reactive-demand gate treats demand as a downstream-value ledger owned by the live Subscription. Graph remains reusable program structure, while Publisher and Scheduler retain their separate runtime responsibilities.
 
 The WAIT/wake gate keeps readiness and demand separate: WOULD_BLOCK/WAIT leaves downstream demand intact, a waker only schedules a retry opportunity, and terminal state remains absorbing even if an older waker is invoked.
+
+The Executor-settlement gate treats FULL and CLOSED as ownership-preserving protocol results. Accepted work must remain conserved until completion/cancellation; rejected descriptors stay entirely with the caller and execute no callbacks.
