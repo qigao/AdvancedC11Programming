@@ -16,6 +16,8 @@ Its central question is:
 
 ## Three IRs
 
+This book calls its metaprogramming, RAII, and Reflection facilities **CMeta**, and the `cmeta_plugin_*` API **CMeta Plugin**. Types, functions, and declaration macros use `cmeta_*`; constants and low-level macros use `CMETA_*`. **Salts** names the source repository and SDK distribution, so installation examples retain the actual build identifiers `find_package(Salts)`, `Salts::CMeta`, and `Salts::Plugin`. Components such as CFlow and DataBind keep their own names.
+
 The book now revolves around three distinct semantic layers:
 
 | IR | Question answered |

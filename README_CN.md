@@ -16,6 +16,8 @@
 
 ## 三种 IR
 
+本书使用 **CMeta** 称呼元编程、RAII 与 Reflection 能力，并将 `cmeta_plugin_*` 接口称为 **CMeta Plugin**。类型、函数与声明宏使用 `cmeta_*`，常量与底层宏使用 `CMETA_*`。**Salts** 是源码仓库与 SDK 发行包的名称，安装示例中的 `find_package(Salts)`、`Salts::CMeta` 和 `Salts::Plugin` 沿用真实构建标识。CFlow、DataBind 等组件各用自己的名称。
+
 全书现在围绕三个不同问题展开：
 
 | IR | 回答的问题 |
