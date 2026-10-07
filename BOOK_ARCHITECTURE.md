@@ -255,52 +255,59 @@ CMETA_TYPEOF(T)
 
 Lean 不是这一章的主要证据；preprocess、compile-pass/fail、cross-compiler、Multi-TU 与 code-size qualification 才是。
 
-## Chapter 3 — FunctionDesc 与 Callable：描述函数，不等于执行函数
+## Chapter 3 — Function semantics 与 executable projection
 
-这是 Part I 需要重点升级的一章。
+这一章把 Function semantic truth 与 execution capability 明确拆开。
 
-首先给普通 C：
+canonical declaration 先产生普通 C：
 
 ~~~c
-int get_user(
-    UserRepository *repo,
-    uint64_t id,
-    User *out_user);
+FunctionDecl(value, int, add,
+    (int, left, CMETA_PARAM_IN),
+    (int, right, CMETA_PARAM_IN));
 ~~~
 
-然后明确拆成两个概念：
-
-| 对象 | 角色 |
-|---|---|
-| `cmeta_function_desc` | descriptive native semantic truth |
-| `cmeta_callable` | one admitted executable representation |
-
-FunctionDesc 至少回答 name、return type、parameter types、IN/OUT/INOUT、ownership/nullability，以及 effects/properties。
-
-Callable 回答 how this supported shape is invoked/composed、capture、dispatch、finite signature 和 execution representation。
-
-因此：
+核心结构：
 
 ~~~text
-FunctionDesc
-    ├── DataBind binding
-    ├── TinyMock
-    ├── Plugin publication
-    ├── HTTP/RPC tooling
-    └── diagnostics
-
-FunctionDesc
-    ↓ admission / exact adapter
-Callable
-    ↓
-CFlow
+ordinary C function
+       |
+       +--> FunctionDesc
+       |       semantic truth
+       |
+       +--> FunctionAbi
+       |       carrier facts
+       |
+       +--> optional exact thunk
+       |
+       +--> receiver projection
+       |
+       '--> parameter bind
+                |
+                v
+          cmeta_callable
+                |
+          validate / admit
+                |
+                v
+          cmeta_invokable
 ~~~
 
-这里不要用 Lean 去证明“signature list 没重复”。
+必须明确以下边界：
 
-这类问题优先用 generator validation / compile-time checks。
+- FunctionDecl 只生成 normal prototype、immutable metadata 和 inline getter；Reflection 本身不生成 erased invocation；
+- FunctionInvokeDecl 是 exact thunk 的显式 opt-in；
+- CMETA_PARAM_RECEIVER 只是 parameter zero 的 semantic role，不改变 C ABI，也不 imply runtime dispatch；
+- receiver projection 由 Function-owned validators 保持 return/result ownership/effects/properties/remaining parameters；
+- receiver operation set 只保存 name + canonical FunctionAbi，是薄索引，不复制 FunctionDesc；
+- FunctionBindDeclAsAbiResult 把 arg/value/borrow 显式建模为 parameter projection；
+- capture bounded，不隐式 malloc/retain/release，不允许 managed consuming capture；
+- cmeta_invokable 是 Function semantics 与 callable execution 在 admission 后的 borrowed join；
+- 成功 admission 后可走 admitted path，不在每次调用重新遍历 Reflection graph。
 
-Lean 留给真正的 semantic law。
+这里的主要证据是 declaration compile-fail、projection validation、lifetime tests、checked/admitted invocation equivalence 与 benchmark。
+
+Lean 留给后续真正授权 graph rewrite 的 semantic law，而不是证明 metadata flag 自己为真。
 
 ---
 
