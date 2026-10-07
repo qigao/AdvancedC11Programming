@@ -28,6 +28,7 @@ Current gates:
 - `ch03_exact_invoke.c`: exact thunk success, aliasing, and fail-before-call behavior;
 - `ch04_graph_admission.c`: low-level typed Graph builders reject an incompatible edge without advancing the version token, while successful mutation changes version and clone produces an independent structurally equal snapshot that remains unchanged after source-only mutation;
 - `ch05_stream_graph.c`: Stream façade builds the expected typed Graph IR;
+- `ch06_normalize_snapshot.c`: a real ZIP surface Graph lowers to primitive RELATION IR in a new snapshot; source/version remain unchanged, and normalizing the normalized Graph again yields an independently versioned but structurally equal Graph;
 - `ch13_plugin_exact_abi.c`: current Plugin manifest validates only at the exact public ABI epoch and exact manifest layout; a different host ABI/query, ABI epoch, or manifest size is rejected with no negotiation or fallback;
 - `ch13_parse_u64.c`: bounded decimal conversion and failure-atomic output.
 
@@ -57,3 +58,5 @@ The lexical-scope gate treats scope cleanup as structured C control flow over ca
 The bind/capture gate treats a closure as a finite generated call projection, not a hidden ownership system. Value capture copies admitted scalar bytes into the callable; borrowed pointers, provider lifetime and Plugin leases remain the caller's explicit responsibility.
 
 The Graph-admission gate treats Graph as control-plane IR: builder calls are the mutation authority, version binds downstream knowledge to one process-local snapshot, and runtime values/scheduler state remain outside the Graph.
+
+The normalization gate treats lowering as artifact transformation rather than runtime dataflow. It proves source immutability and structural idempotence while keeping process-local Graph versions distinct; optimizer theorem authority remains a separate concern.

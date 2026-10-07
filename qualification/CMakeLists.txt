@@ -286,6 +286,14 @@ target_link_libraries(
     Salts::CFlow)
 
 book_qualification_gate(
+  book_ch06_normalize_snapshot
+  ch06_normalize_snapshot.c)
+target_link_libraries(
+  book_ch06_normalize_snapshot
+  PRIVATE
+    Salts::CFlow)
+
+book_qualification_gate(
   book_ch13_parse_u64
   ch13_parse_u64.c)
 
