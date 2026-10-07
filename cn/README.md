@@ -9,7 +9,7 @@
 <!-- book-toc:start -->
 **Part I — Native Semantic IR**
 - [第一章：从 Linux-style C 到 CMeta——Macro、static inline 与零运行时抽象](./ch-01.md)
-- [第二章：从宏到 Generic——把重复的类型契约收成一次定义](./ch-02.md)
+- [第二章：有限元编程内核——Generic、Struct、Traits 与类型关系](./ch-02.md)
 - [第三章：从函数指针到函数语义——FunctionDesc、Callable、Lambda 与 Bind](./ch-03.md)
 
 **Part II — Execution IR**
