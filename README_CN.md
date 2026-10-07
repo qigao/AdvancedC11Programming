@@ -65,14 +65,23 @@ int get_user(
 
 ### Part I — Native Semantic IR
 
-从真实 C 重复开始：
+从 ordinary C 的工具分工开始，而不是把 macro 当成必须逃离的过渡阶段：
 
-~~~c
-DECLARE_VEC(IntVec, int);
-DECLARE_LIST(IntList, int);
+~~~text
+normal function / static inline
+        -> typed behavior
+
+finite macro / PP
+        -> tokens / declarations / schema replay
+
+compiler capability
+        -> typeof / same-type / cleanup / section
+
+canonical Reflection
+        -> stable semantic truth
 ~~~
 
-逐步进入 Generic、Struct/Enum、Traits、semantic type identity、FunctionDesc 和 Callable。
+然后进入 Generic、Struct/Enum、Traits、semantic type identity、FunctionDesc 和 Callable。CMeta 可以被普通 C 直接消费；可选 source lowering 不是前置条件。
 
 重点是区分：
 
@@ -151,7 +160,7 @@ HTTP / RPC / PLUGIN / WASM / OPENAPI / MOCK 都是 projection，而不是新的 
 
 <!-- book-toc:start -->
 **Part I — Native Semantic IR**
-- [第一章：CMeta 的起点——从写 C 宏的痛苦开始](./cn/ch-01.md)
+- [第一章：从 Linux-style C 到 CMeta——Macro、static inline 与零运行时抽象](./cn/ch-01.md)
 - [第二章：从宏到 Generic——把重复的类型契约收成一次定义](./cn/ch-02.md)
 - [第三章：从函数指针到函数语义——FunctionDesc、Callable、Lambda 与 Bind](./cn/ch-03.md)
 
