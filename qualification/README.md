@@ -37,6 +37,7 @@ Current gates:
 - `ch09_reactive_demand.c`: downstream demand limits emitted values exactly, remaining publisher values survive between requests, terminal completion occurs once, and post-terminal request returns CLOSED without producing more callbacks;
 - `ch09_wait_wake.c`: readiness Publisher WAIT preserves outstanding demand, wake permits retry without creating demand, later request resumes remaining values, and stale wake after terminal produces no callbacks;
 - `ch10_executor_settlement.c`: capacity-one manual Executor accepts one descriptor, rejects the next with FULL without invoking callbacks, settles accepted work exactly once through run+finalize, and rejects post-shutdown admission with CLOSED while preserving the settlement ledger;
+- `ch11_machine_staged_commit.c`: a failed Machine action returns ERROR while preserving the original state id/value, while a successful staged action commits once to a terminal state and later event admission is rejected without re-running the action;
 - `ch13_plugin_exact_abi.c`: current Plugin manifest validates only at the exact public ABI epoch and exact manifest layout; a different host ABI/query, ABI epoch, or manifest size is rejected with no negotiation or fallback;
 - `ch13_parse_u64.c`: bounded decimal conversion and failure-atomic output.
 
@@ -84,3 +85,5 @@ The reactive-demand gate treats demand as a downstream-value ledger owned by the
 The WAIT/wake gate keeps readiness and demand separate: WOULD_BLOCK/WAIT leaves downstream demand intact, a waker only schedules a retry opportunity, and terminal state remains absorbing even if an older waker is invoked.
 
 The Executor-settlement gate treats FULL and CLOSED as ownership-preserving protocol results. Accepted work must remain conserved until completion/cancellation; rejected descriptors stay entirely with the caller and execute no callbacks.
+
+The Machine staged-commit gate keeps admission, action evaluation and commit separate: callbacks may fail before commit without publishing partial Machine-owned state, while a successful transition commits exactly once and terminal state closes further admission.

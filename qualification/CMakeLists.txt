@@ -358,6 +358,14 @@ target_link_libraries(
     Salts::CFlow)
 
 book_qualification_gate(
+  book_ch11_machine_staged_commit
+  ch11_machine_staged_commit.c)
+target_link_libraries(
+  book_ch11_machine_staged_commit
+  PRIVATE
+    Salts::CFlow)
+
+book_qualification_gate(
   book_ch13_parse_u64
   ch13_parse_u64.c)
 
