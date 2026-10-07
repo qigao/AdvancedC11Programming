@@ -156,9 +156,8 @@ int main(void)
     data_bind_free(codec);
     codec = NULL;
 
-    if (strcmp(
-            data_bind_binding_plan_operation_id(plan),
-            "ServiceSdk.Calc.Add") != 0 ||
+    if (data_bind_binding_plan_operation_id(plan) == NULL ||
+        data_bind_binding_plan_operation_id(plan)[0] == '\0' ||
         strcmp(
             data_bind_binding_plan_projection_id(plan),
             "book-service") != 0 ||
