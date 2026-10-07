@@ -34,6 +34,7 @@ Current gates:
 - `ch07_direct_no_fallback.c`: an eligible generated Filter/Map Direct pipeline executes through StaticTarget stages, while an effectful stateful Direct schema returns `INELIGIBLE`; explicitly selecting Plan for the same callable succeeds without any hidden Direct fallback;
 - `ch06_normalize_idempotence.c`: a real ZIP surface Graph lowers to an independent primitive snapshot, source structure/version remain unchanged, and normalizing the normalized Graph again yields a structurally equal snapshot with its own version token;
 - `ch06_authorized_rewrite.c`: an IDEMPOTENT endomap pair admits exactly one idempotent-map elimination with a bound proof-trace event, while behaviorally similar code without the property contract retains both callable applications and emits no semantic rewrite event;
+- `ch09_reactive_demand.c`: downstream demand limits emitted values exactly, remaining publisher values survive between requests, terminal completion occurs once, and post-terminal request returns CLOSED without producing more callbacks;
 - `ch13_plugin_exact_abi.c`: current Plugin manifest validates only at the exact public ABI epoch and exact manifest layout; a different host ABI/query, ABI epoch, or manifest size is rejected with no negotiation or fallback;
 - `ch13_parse_u64.c`: bounded decimal conversion and failure-atomic output.
 
@@ -75,3 +76,5 @@ The Direct gate makes backend policy observable: Direct eligibility is a strict 
 The normalization gate treats lowering as a static artifact transformation. Structural equality compares executable IR while version tokens continue to identify distinct process-local snapshots; no theorem prover or scheduler participates in ordinary normalization.
 
 The authorized-rewrite gate keeps metadata claims, optimizer actions, and rewrite witnesses distinct: the property marks an admissible candidate, the optimizer applies one named rule, and the trace binds that concrete event to exact Graph snapshots.
+
+The reactive-demand gate treats demand as a downstream-value ledger owned by the live Subscription. Graph remains reusable program structure, while Publisher and Scheduler retain their separate runtime responsibilities.
