@@ -5,12 +5,9 @@ These sources are executable counterparts of selected manuscript examples.
 They serve a different purpose from `SOURCE_SNAPSHOTS.md`:
 
 - the edition snapshots are the fixed provenance for implementation claims in the book;
-- this directory is a compatibility/drift gate against the **latest released** `Salts.Native` SDK package.
+- this directory is a compatibility/drift gate against the **latest released** installed SDK packages required by each example, currently `Salts.Native` and `SaltsUtils.Native`.
 
-CI intentionally does not pin a package version. At the start of each run it resolves the latest GitHub
-release asset, uses the matching `sdk/linux-x64` install tree through
-`CMAKE_PREFIX_PATH`, then builds and runs these programs as independent
-consumers. If the latest release cannot be resolved, downloaded, configured, or consumed, the gate fails; it does not fall back to an older package.
+CI intentionally does not pin package versions. At the start of each run it resolves the latest GitHub release assets for Salts and SaltsUtils, restores their matching `sdk/linux-x64` install trees, supplies SaltsUtils with the restored Salts SDK through `SALTS_ROOT`, then builds and runs these programs as independent installed consumers. If either required latest release cannot be resolved, downloaded, configured, generated from, linked, or consumed, the gate fails; it does not fall back to an older package or compatibility target.
 
 A failure here means that a public SDK change has made one of the book's
 executable contracts stale. It does not silently rewrite the edition snapshot.
@@ -32,6 +29,7 @@ Current gates:
 - `ch06_optimizer_trace.c`: an idempotent-map rewrite emits one stable proof-trace rule bound to the exact source/output Graph versions; optimizing the result again is structurally idempotent, and later source mutation invalidates the old trace binding;
 - `ch07_plan_certificate.c`: a normalized Graph compiles into a reusable Plan and sequential certificate; mutating the source Graph invalidates the old certificate while the already-compiled Plan continues executing its original pre-decoded program;
 - `ch07_direct_no_fallback.c`: an eligible generated Filter/Map Direct pipeline executes through StaticTarget stages, while an effectful stateful Direct schema returns `INELIGIBLE`; explicitly selecting Plan for the same callable succeeds without any hidden Direct fallback;
+- `ch08_databind_binding.c` + `ch08_databind_service.schema`: installed `salts-idlc` generates the Service/native binding inputs, control-plane DataBind compiles an immutable BindingPlan, absent `scale` receives its schema default, ordinary generated C service execution returns `sum=4`, and one live frame lifetime is consumed exactly once by `restore_zero`;
 - `ch13_plugin_exact_abi.c`: current Plugin manifest validates only at the exact public ABI epoch and exact manifest layout; a different host ABI/query, ABI epoch, or manifest size is rejected with no negotiation or fallback;
 - `ch13_parse_u64.c`: bounded decimal conversion and failure-atomic output.
 
@@ -69,3 +67,5 @@ The optimizer-trace gate checks the C bridge, not the theorem itself: metadata a
 The Plan/Certificate gate separates execution artifact from witness: Plan evaluation does not query later Graph topology, while Certificate checking fails closed once the source Graph version/fingerprint no longer matches. Certificate rows are execution-only, not a persistent wire identity.
 
 The Direct gate makes backend policy observable: Direct eligibility is a strict permission to remove generic runtime layers, capacity/ineligibility failures return explicit statuses, and selecting Plan for an ineligible callable is a separate caller action rather than an internal fallback.
+
+The DataBind Service gate qualifies the publication Chapter 8 two-stage boundary: IDL code generation publishes stable native facts at build time, while the final opaque BindingPlan is compiled in the control plane from the current logical contract, projection and CMeta descriptors. The codec can be released after plan construction; request/response storage stays caller-owned; the live call-lifetime record is a teardown obligation rather than a second type/ownership model.
