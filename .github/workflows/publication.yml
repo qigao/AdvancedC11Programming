@@ -196,7 +196,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cmake             -S qualification             -B build/qualification             -DCMAKE_BUILD_TYPE=Release             -DCMAKE_PREFIX_PATH="$SALTS_SDK_PREFIX;$SALTS_UTILS_SDK_PREFIX"
+          cmake             -S qualification             -B build/qualification             -DCMAKE_BUILD_TYPE=Release             -DCMAKE_PREFIX_PATH="$SALTS_SDK_PREFIX;$SALTS_UTILS_SDK_PREFIX"             -DSalts_DIR="$SALTS_SDK_PREFIX/lib/cmake/Salts"             -DSaltsUtils_DIR="$SALTS_UTILS_SDK_PREFIX/lib/cmake/SaltsUtils"             -DCMAKE_FIND_USE_PACKAGE_REGISTRY=FALSE             -DCMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY=FALSE
 
       - name: Build qualification gates
         run: cmake --build build/qualification --parallel
