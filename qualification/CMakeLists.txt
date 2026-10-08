@@ -12,6 +12,30 @@ set(CMAKE_C_EXTENSIONS OFF)
 find_package(Salts CONFIG REQUIRED)
 find_package(SaltsUtils CONFIG REQUIRED)
 
+function(book_require_restored_package_dir package_name root_env config_subdir)
+  if(NOT DEFINED ENV{${root_env}} OR NOT IS_DIRECTORY "$ENV{${root_env}}")
+    message(FATAL_ERROR "${root_env} must name the restored SDK")
+  endif()
+
+  file(REAL_PATH "$ENV{${root_env}}/${config_subdir}" expected_dir)
+  file(REAL_PATH "${${package_name}_DIR}" actual_dir)
+
+  if(NOT actual_dir STREQUAL expected_dir)
+    message(FATAL_ERROR
+      "${package_name} resolved outside restored SDK: "
+      "expected=${expected_dir} actual=${actual_dir}")
+  endif()
+endfunction()
+
+book_require_restored_package_dir(
+  Salts
+  SALTS_ROOT
+  "lib/cmake/Salts")
+book_require_restored_package_dir(
+  SaltsUtils
+  SALTS_UTILS_ROOT
+  "lib/cmake/SaltsUtils")
+
 set(CMAKE_REQUIRED_LIBRARIES Salts::CMeta)
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
   set(CMAKE_REQUIRED_FLAGS "-Wall -Wextra -Werror -pedantic")
