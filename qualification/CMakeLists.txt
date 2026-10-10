@@ -522,7 +522,10 @@ set_tests_properties(book_ch12_cmeta_ace_active_object PROPERTIES
 foreach(fixture IN ITEMS
     ace_configurator_add.cfg
     ace_configurator_scale.cfg
-    ace_configurator_invalid.cfg)
+    ace_configurator_invalid.cfg
+    ace_configurator_missing.cfg
+    ace_configurator_unknown.cfg
+    ace_configurator_range.cfg)
   configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/${fixture}"
     "${CMAKE_CURRENT_BINARY_DIR}/${fixture}"
