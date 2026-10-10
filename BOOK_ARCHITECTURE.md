@@ -57,6 +57,8 @@ CMeta 主线包括有限宏展开、编译期类型约束、泛型与类型关�
 
 第十二章保留 Actor 作为**独立应用邮箱与单一状态修改者**的语义案例，但新增 Salts 2.3 CNet SG Owner + 策略作为**无需 Actor**的对照。Policy 选择不等于容量预留，远端 Endpoint 不等于本地 Owner，Reconnect 不等于逻辑请求 Retry；这些最新安装版 SDK 事实必须与固定版 Actor/Lean 证明严格分开，并通过独立 C11 consumer gate 验证。
 
+第十二章另外将 ACE **Reactor 风格事件派发**与 **Proactor NativeIO 完成路径**进行一对一比较：前者从真实 TCP listener readiness 出发、由调用方 poll 并通过 CMeta typed Handler 处理事件；后者由最终 SG Owner 的单一 host lease 观察 completion，再执行 socket handoff、终止回收和 credit 结算。两者不额外创建 I/O 引擎；`cnet_client_poll` 内部也消费 NativeIO completion，因此不宣称存在独立纯内核 Reactor 实现。新 gate 为 `ch12_ace_reactor_dispatch.c`，现有 Proactor gate 为 `ch12_cnet_sg_handoff.c`。
+
 第十二章还通过安装版 `Salts::NativeIO` + `Salts::CNet` 验证两个真实 SG Owner 的 TCP handoff：一次单独的 socket 转移、双向实际负载、owner-affine 回调与 terminal/Manager 回收。这是对纯 Strategy API gate 的运行时补充，不能被解释为压力测试或 Actor Lean 证明。
 
 ## 贯穿章节：CMeta 版 ACE 模式的设计与应用

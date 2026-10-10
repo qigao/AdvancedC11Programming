@@ -474,6 +474,22 @@ target_link_libraries(
   PRIVATE
     Salts::CFlow)
 
+# Reactor-style caller-driven Acceptor-Connector: real listener readiness
+# and CNet poll callbacks adapted to an exact reflected CMeta Interface.
+# NativeIO/CNet remain the only I/O authority; no standalone backend is added.
+book_qualification_gate(
+  book_ch12_ace_reactor_dispatch
+  ch12_ace_reactor_dispatch.c)
+target_link_libraries(
+  book_ch12_ace_reactor_dispatch
+  PRIVATE
+    Salts::CNet
+    Salts::CMeta
+    Salts::Platform)
+set_tests_properties(book_ch12_ace_reactor_dispatch PROPERTIES
+  TIMEOUT 25
+  LABELS "ace;reactor;acceptor;connector;installed;network")
+
 # CNet 2.3 Strategy decisions are pure admission policy; CMeta supplies an
 # exact typed ACE-style handler, never a second Reactor or Actor runtime.
 book_qualification_gate(

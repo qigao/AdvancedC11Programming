@@ -53,6 +53,13 @@ rewriting those earlier implementation claims or using source-tree dependencies.
   post-edition API admission/ownership semantics. The gate resolves the
   **newest published Salts.Native SDK**, including prereleases; the source tag is
   provenance for the explanation, **not a consumer version pin**.
+- `qualification/ch12_ace_reactor_dispatch.c` adds a real installed-SDK
+  Reactor-style **application event dispatch** consumer with CNet listener
+  readiness and caller-owned poll progression through an exact CMeta typed
+  Observer. It does not claim a separate kernel Reactor: CNet's poll consumes
+  actual NativeIO completions. Compare it with the existing Proactor completion
+  route below; both use the latest installed package rather than pinning this
+  source reference.
 - The separate `qualification/ch12_cnet_sg_handoff.c` gate exercises one
   **real two-SG-shard** loopback TCP accept -> detached bounded handoff -> final
   Owner Manager adoption -> two-way transfer -> terminal/recycle -> credit return,
