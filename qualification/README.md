@@ -36,6 +36,17 @@ individual CI runner happens to have GmSSL preinstalled.
 A failure here means that a public SDK change has made one of the book's
 executable contracts stale. It does not silently rewrite the edition snapshot.
 
+Every native runner also exports an actual CTest JUnit report. The shared
+`scripts/verify_ctest_results.py` checks that all **35 established executable
+gates** still appear exactly once and genuinely ran/passed; missing, disabled,
+skipped, failed, duplicated or malformed reports fail CI. Future additive
+tests are welcome; 35 is a minimum, not an artificial ceiling. Offline unit
+tests exercise the verifier on all three hosts before SDK restoration. This
+guards against a misleading green `34/34` or skip when CTest's exit code
+would otherwise be successful. The full native execution remains mandatory;
+this admission check is not a replacement for CTest, IDL codegen or
+installed-package verification.
+
 Current gates:
 
 - `ch01_compiler_skills.c`: expression-level constant requirements, unevaluated native type checks, capability-gated single-evaluation locals, and type-checked `container_of` recovery while preserving ordinary C execution;
