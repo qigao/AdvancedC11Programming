@@ -11,9 +11,13 @@ CI intentionally does not pin package versions. The resolver selects the
 highest SemVer **published** GitHub Release for each SDK, including RC prereleases
 (the GitHub `/releases/latest` endpoint would incorrectly skip them). A newer
 RC beats an older stable release; the final release of the same version beats its RC.
-It requires the exact matching `.nupkg` asset, checks published SHA256SUMS when
-present, and restores each `sdk/linux-x64` install tree using `unzip` so the
-installed `salts-idlc` retains its executable bit.
+It requires the exact matching `.nupkg` asset and checks published SHA256SUMS
+when present. The native CI matrix selects **one exact SDK RID per actual host**:
+`linux-x64` on Ubuntu x64, `windows-x64` on Windows x64 and `macos-arm64`
+on macOS ARM64. Runner OS/architecture mismatches fail before restoration;
+cross-RID substituting is forbidden. Linux/macOS extraction uses `unzip` to
+retain the packaged `salts-idlc` executable bit; Windows extracts the real
+`salts-idlc.exe` and provides the SDK DLL directories on the host PATH.
 
 The two SDKs are selected independently, never pinned. Their combined installed
 consumer build is the compatibility gate: neither a legacy SaltsUtils with a newer
