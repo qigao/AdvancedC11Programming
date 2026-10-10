@@ -36,6 +36,28 @@ Naming in prose follows the component: CMeta for metaprogramming, RAII, and Refl
 
 The SaltsUtils repository may move beyond this commit. Chapter 8/13 API names and lifecycle claims marked as current in this edition refer to this snapshot.
 
+## Post-edition published-SDK compatibility evidence (not edition provenance)
+
+The **fixed edition snapshots above remain unchanged**. An additional independent
+installed-consumer gate checks APIs that were added to later SDK releases, without
+rewriting those earlier implementation claims or using source-tree dependencies.
+
+- CNet SG policy reference implementation: `qigao/salts`
+  [`v2.3.0-rc.4`](https://github.com/qigao/salts/releases/tag/v2.3.0-rc.4),
+  source SHA `233a0d1c2086808d85160ad70010e13b4c63d5c8`.
+- Reference public headers: `cnet/owner_placement.h`, `cnet/destination_policy.h`,
+  `cnet/manager.h`, `cnet/handoff.h`, `cnet/client_pool.h` and
+  `cnet/recovery_policy.h`; the ACE-style typed handler uses
+  `cmeta/interface.h`.
+- The Chapter 12 contrast and `qualification/ch12_cnet_strategy.c` explain
+  post-edition API admission/ownership semantics. The gate resolves the
+  **newest published Salts.Native SDK**, including prereleases; the source tag is
+  provenance for the explanation, **not a consumer version pin**.
+- Passing installed-policy tests is evidence for these API calls and their
+  selected failure modes only. It does **not** prove CNet's SG execution races,
+  cross-owner handoff under load, device runtime behavior, Actor/SG equivalence,
+  or performance.
+
 ## CHTTP
 
 - Repository: `qigao/chttp`
