@@ -61,147 +61,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Download latest Salts.Native SDK
+      - name: Test latest SDK release selection
+        run: python -m unittest discover -s scripts -p 'test_restore_latest_sdks.py'
+
+      - name: Restore latest published Salts and SaltsUtils SDKs
         env:
           GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          import os
-          import shutil
-          import urllib.request
-          import zipfile
-          from pathlib import Path
-
-          api = "https://api.github.com/repos/qigao/salts/releases/latest"
-          headers = {
-              "Accept": "application/vnd.github+json",
-              "User-Agent": "advanced-c11-book-qualification",
-          }
-          token = os.environ.get("GH_TOKEN")
-          if token:
-              headers["Authorization"] = f"Bearer {token}"
-
-          request = urllib.request.Request(api, headers=headers)
-          with urllib.request.urlopen(request) as response:
-              release = json.load(response)
-
-          assets = [
-              asset for asset in release.get("assets", [])
-              if asset.get("name", "").startswith("Salts.Native.")
-              and asset.get("name", "").endswith(".nupkg")
-          ]
-          if len(assets) != 1:
-              raise SystemExit(
-                  f"expected exactly one Salts.Native nupkg in latest release; got {len(assets)}"
-              )
-
-          package = Path("/tmp/Salts.Native.nupkg")
-          asset_request = urllib.request.Request(
-              assets[0]["browser_download_url"],
-              headers={"User-Agent": "advanced-c11-book-qualification"},
-          )
-          with urllib.request.urlopen(asset_request) as source, package.open("wb") as output:
-              shutil.copyfileobj(source, output)
-
-          root = Path("/tmp/salts-native")
-          with zipfile.ZipFile(package) as archive:
-              archive.extractall(root)
-
-          prefix = root / "sdk" / "linux-x64"
-          config = prefix / "lib" / "cmake" / "Salts" / "SaltsConfig.cmake"
-          if not config.is_file():
-              raise SystemExit(f"missing installed Salts CMake package: {config}")
-
-          print(f"Using latest Salts release {release.get('tag_name')}: {assets[0]['name']}")
-          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
-              env.write(f"SALTS_SDK_PREFIX={prefix}\n")
-          PY
-
-      - name: Download latest SaltsUtils.Native SDK
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          import os
-          import shutil
-          import subprocess
-          import urllib.request
-          from pathlib import Path
-
-          api = "https://api.github.com/repos/qigao/salts-utils/releases/latest"
-          headers = {
-              "Accept": "application/vnd.github+json",
-              "User-Agent": "advanced-c11-book-qualification",
-          }
-          token = os.environ.get("GH_TOKEN")
-          if token:
-              headers["Authorization"] = f"Bearer {token}"
-
-          request = urllib.request.Request(api, headers=headers)
-          with urllib.request.urlopen(request) as response:
-              release = json.load(response)
-
-          assets = [
-              asset for asset in release.get("assets", [])
-              if asset.get("name", "").startswith("SaltsUtils.Native.")
-              and asset.get("name", "").endswith(".nupkg")
-          ]
-          if len(assets) != 1:
-              raise SystemExit(
-                  f"expected exactly one SaltsUtils.Native nupkg in latest release; got {len(assets)}"
-              )
-
-          package = Path("/tmp/SaltsUtils.Native.nupkg")
-          asset_request = urllib.request.Request(
-              assets[0]["browser_download_url"],
-              headers={"User-Agent": "advanced-c11-book-qualification"},
-          )
-          with urllib.request.urlopen(asset_request) as source, package.open("wb") as output:
-              shutil.copyfileobj(source, output)
-
-          root = Path("/tmp/saltsutils-native")
-          if root.exists():
-              shutil.rmtree(root)
-          root.mkdir(parents=True)
-          subprocess.run(
-              ["unzip", "-q", "-o", str(package), "-d", str(root)],
-              check=True,
-          )
-
-          prefix = root / "sdk" / "linux-x64"
-          config = prefix / "lib" / "cmake" / "SaltsUtils" / "SaltsUtilsConfig.cmake"
-          if not config.is_file():
-              raise SystemExit(f"missing installed SaltsUtils CMake package: {config}")
-          idlc = prefix / "bin" / "salts-idlc"
-          if not idlc.is_file() or not os.access(idlc, os.X_OK):
-              raise SystemExit(
-                  f"installed SaltsUtils host compiler is not executable: {idlc}"
-              )
-
-          print(f"Using latest SaltsUtils release {release.get('tag_name')}: {assets[0]['name']}")
-          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
-              env.write(f"SALTS_UTILS_SDK_PREFIX={prefix}\n")
-          PY
-
+        run: python scripts/restore_latest_sdks.py
       - name: Configure qualification gates
         env:
           SALTS_ROOT: ${{ env.SALTS_SDK_PREFIX }}
           SALTS_UTILS_ROOT: ${{ env.SALTS_UTILS_SDK_PREFIX }}
+          LD_LIBRARY_PATH: ${{ env.SALTS_UTILS_SDK_PREFIX }}/lib:${{ env.SALTS_SDK_PREFIX }}/lib
         shell: bash
         run: |
           set -euo pipefail
-          cmake             -S qualification             -B build/qualification             -DCMAKE_BUILD_TYPE=Release             -DCMAKE_PREFIX_PATH="$SALTS_SDK_PREFIX;$SALTS_UTILS_SDK_PREFIX"             -DSalts_DIR="$SALTS_SDK_PREFIX/lib/cmake/Salts"             -DSaltsUtils_DIR="$SALTS_UTILS_SDK_PREFIX/lib/cmake/SaltsUtils"             -DCMAKE_FIND_USE_PACKAGE_REGISTRY=FALSE             -DCMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY=FALSE
+          cmake -S qualification -B build/qualification \
+            -DCMAKE_BUILD_TYPE=Release \
+            "-DCMAKE_PREFIX_PATH=$SALTS_SDK_PREFIX;$SALTS_UTILS_SDK_PREFIX" \
+            "-DSalts_DIR=$SALTS_SDK_PREFIX/lib/cmake/Salts" \
+            "-DSaltsUtils_DIR=$SALTS_UTILS_SDK_PREFIX/lib/cmake/SaltsUtils" \
+            -DCMAKE_FIND_USE_PACKAGE_REGISTRY=FALSE \
+            -DCMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY=FALSE
 
       - name: Build qualification gates
+        env:
+          SALTS_ROOT: ${{ env.SALTS_SDK_PREFIX }}
+          SALTS_UTILS_ROOT: ${{ env.SALTS_UTILS_SDK_PREFIX }}
+          LD_LIBRARY_PATH: ${{ env.SALTS_UTILS_SDK_PREFIX }}/lib:${{ env.SALTS_SDK_PREFIX }}/lib
         run: cmake --build build/qualification --parallel
 
       - name: Run qualification gates
         env:
+          SALTS_ROOT: ${{ env.SALTS_SDK_PREFIX }}
+          SALTS_UTILS_ROOT: ${{ env.SALTS_UTILS_SDK_PREFIX }}
           LD_LIBRARY_PATH: ${{ env.SALTS_UTILS_SDK_PREFIX }}/lib:${{ env.SALTS_SDK_PREFIX }}/lib
         run: ctest --test-dir build/qualification --output-on-failure
