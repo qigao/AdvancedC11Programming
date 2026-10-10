@@ -559,6 +559,33 @@ set_tests_properties(book_ch15_cmeta_ace_configurator PROPERTIES
   LABELS "cmeta;ace;configurator;control-plane;installed"
   TIMEOUT 15)
 
+# Application-level ACE Configurator selects two *independent* installed
+# CNet policy APIs from strict config: local Owner versus remote endpoint.
+# Only advisory decision is tested; no implicit handoff, pool, dial or retry.
+foreach(fixture IN ITEMS
+    ace_cnet_policy_strict.cfg
+    ace_cnet_policy_mixed.cfg
+    ace_cnet_policy_rr.cfg
+    ace_cnet_policy_invalid.cfg
+    ace_cnet_policy_missing.cfg)
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/${fixture}"
+    "${CMAKE_CURRENT_BINARY_DIR}/${fixture}"
+    COPYONLY)
+endforeach()
+book_qualification_gate(
+  book_ch15_cmeta_ace_cnet_policy_config
+  ch15_cmeta_ace_cnet_policy_config.c)
+target_link_libraries(
+  book_ch15_cmeta_ace_cnet_policy_config
+  PRIVATE
+    Salts::CNet
+    Salts::CMeta
+    Salts::Platform)
+set_tests_properties(book_ch15_cmeta_ace_cnet_policy_config PROPERTIES
+  LABELS "ace;configurator;cnet;server;client;installed"
+  TIMEOUT 15)
+
 book_qualification_gate(
   book_ch13_parse_u64
   ch13_parse_u64.c)
