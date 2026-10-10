@@ -54,6 +54,7 @@ Current gates:
 - `ch09_wait_wake.c`: readiness Publisher WAIT preserves outstanding demand, wake permits retry without creating demand, later request resumes remaining values, and stale wake after terminal produces no callbacks;
 - `ch10_executor_settlement.c`: capacity-one manual Executor accepts one descriptor, rejects the next with FULL without invoking callbacks, settles accepted work exactly once through run+finalize, and rejects post-shutdown admission with CLOSED while preserving the settlement ledger;
 - `ch11_machine_staged_commit.c`: a failed Machine action returns ERROR while preserving the original state id/value, while a successful staged action commits once to a terminal state and later event admission is rejected without re-running the action;
+- `ch12_cnet_strategy.c`: independent installed `Salts::CNet` + CMeta ACE-style typed Strategy consumer checks server fixed Owner admission versus client stable remote endpoint selection, strict-key failure without rerouting, remote set generation stability, expiration and logical request retry denied by default; no Actor, socket or hidden worker;
 - `ch13_plugin_exact_abi.c`: current Plugin manifest validates only at the exact public ABI epoch and exact manifest layout; a different host ABI/query, ABI epoch, or manifest size is rejected with no negotiation or fallback;
 - `ch13_parse_u64.c`: bounded decimal conversion and failure-atomic output.
 
