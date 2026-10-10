@@ -7,14 +7,23 @@ They serve a different purpose from `SOURCE_SNAPSHOTS.md`:
 - the edition snapshots are the fixed provenance for implementation claims in the book;
 - this directory is a compatibility/drift gate against the **latest released** installed SDK packages used by the book: `Salts.Native` for CMeta/CFlow/Plugin and `SaltsUtils.Native` for DataBind.
 
-CI intentionally does not pin package versions. At the start of each run it resolves the latest GitHub
-release assets for both repositories and restores their matching `sdk/linux-x64`
-install trees. Configure receives the exact restored `Salts_DIR` and `SaltsUtils_DIR`,
-disables CMake user/system package registries, and qualification verifies that the
-resolved package directories remain inside those restored SDK roots. It then builds
-and runs these programs as independent consumers. If either required latest release
-cannot be resolved, downloaded, configured, or consumed, the gate fails; it does not
-fall back to an older package, machine-installed package, or source-tree dependency.
+CI intentionally does not pin package versions. The resolver selects the
+highest SemVer **published** GitHub Release for each SDK, including RC prereleases
+(the GitHub `/releases/latest` endpoint would incorrectly skip them). A newer
+RC beats an older stable release; the final release of the same version beats its RC.
+It requires the exact matching `.nupkg` asset, checks published SHA256SUMS when
+present, and restores each `sdk/linux-x64` install tree using `unzip` so the
+installed `salts-idlc` retains its executable bit.
+
+The two SDKs are selected independently, never pinned. Their combined installed
+consumer build is the compatibility gate: neither a legacy SaltsUtils with a newer
+Salts nor a newer SaltsUtils without its required Salts exports may silently pass.
+Configure receives the exact restored `Salts_DIR` and `SaltsUtils_DIR`, disables
+CMake user/system package registries, and qualification verifies that resolved
+package directories remain inside those SDK roots. Build and CTest inherit both
+SDK roots and runtime library paths. Any missing or incompatible newest package
+fails; no downgrade, permission repair, machine-installed package, source-tree
+dependency, or compatibility-target fallback is allowed.
 
 A failure here means that a public SDK change has made one of the book's
 executable contracts stale. It does not silently rewrite the edition snapshot.
