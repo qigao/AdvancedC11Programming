@@ -34,6 +34,32 @@ class VersionTests(unittest.TestCase):
         rc10 = release("v7.5.0-rc.10")
         self.assertEqual(select_release([rc9, rc10], "Salts.Native")[0], rc10)
 
+    def test_independent_projects_use_latest_rc_without_matching_rc_numbers(self):
+        # Real releases do not progress in lockstep. Never pin, coerce or
+        # downgrade one SDK to match the other's prerelease suffix.
+        salts = [
+            release("v7.5.0-rc.2"),
+            release("v7.5.0-rc.7"),
+            release("v7.4.9"),
+        ]
+        utils = [
+            release("v9.3.0-rc.5", package="SaltsUtils.Native"),
+            release("v9.3.0-rc.4", package="SaltsUtils.Native"),
+            release("v9.2.9", package="SaltsUtils.Native"),
+        ]
+        self.assertEqual(select_release(salts, "Salts.Native")[0]["tag_name"],
+                         "v7.5.0-rc.7")
+        self.assertEqual(select_release(utils, "SaltsUtils.Native")[0]["tag_name"],
+                         "v9.3.0-rc.5")
+
+    def test_latest_release_requires_its_own_exact_project_asset(self):
+        # A correctly named newer SaltsUtils asset cannot satisfy an
+        # independently selected Salts.Native release, even at equal SemVer.
+        incorrect = release("v7.5.0-rc.8", package="SaltsUtils.Native")
+        older = release("v7.5.0-rc.7")
+        with self.assertRaisesRegex(RuntimeError, "expected one exact"):
+            select_release([older, incorrect], "Salts.Native")
+
     def test_draft_is_not_published(self):
         stable = release("v7.4.0")
         draft = release("v8.0.0", draft=True)
