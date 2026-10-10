@@ -19,7 +19,8 @@
 
 enum { BOOK_LF_WORKERS = 2, BOOK_LF_CAPACITY = 2, BOOK_LF_EVENT_IDS = 3 };
 typedef enum book_role {
-    BOOK_FOLLOWER = 0,
+    BOOK_NEW = 0, /* unstarted workers are not election candidates */
+    BOOK_FOLLOWER,
     BOOK_LEADER,
     BOOK_PROCESSING,
     BOOK_STOPPED
