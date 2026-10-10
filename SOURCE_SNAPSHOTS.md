@@ -65,6 +65,19 @@ rewriting those earlier implementation claims or using source-tree dependencies.
   Owner Manager adoption -> two-way transfer -> terminal/recycle -> credit return,
   using only the latest installed public SDK. It does not change the source
   snapshot recorded above or pin the newest package to its example reference.
+- `qualification/ch12_cnet_pool_recovery.c` adds a separate **latest installed
+  public SDK** owner-local Client Pool + Manager consumer with real loopback TCP
+  and explicit tiny application-protocol `RDY!` reception before Pool READY.
+  Reference signatures are the published
+  [Salts v2.3.0-rc.8](https://github.com/qigao/salts/releases/tag/v2.3.0-rc.8)
+  `cnet/client_pool.h`, `cnet/manager.h`, and
+  `cnet/recovery_policy.h`. That source tag only anchors the explained API:
+  each CI run independently restores the highest published Salts/SaltsUtils
+  package versions and never pins its SDK dependency. The application-owned
+  two-slot protocol reservation ledger, generation-safe Pool Lease admission,
+  real terminal/Manager recycle and lease-after-terminal settlement are tested;
+  the sample does not implement production TLS authentication, a multiplexed
+  remote server, real reconnect or a replayed application request.
 - The published 2.3 ACE pattern API reference adds `cmeta/interface.h`,
   `cmeta/ace_interceptor.h` and `cmeta/ace_synchronization.h` for typed
   Strategy, Interceptor and borrowed Lockable/Scoped Locking. `NativeIO` owns
