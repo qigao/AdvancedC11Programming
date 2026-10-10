@@ -27,7 +27,11 @@ CMake user/system package registries, and qualification verifies that resolved
 package directories remain inside those SDK roots. Build and CTest inherit both
 SDK roots and runtime library paths. Any missing or incompatible newest package
 fails; no downgrade, permission repair, machine-installed package, source-tree
-dependency, or compatibility-target fallback is allowed.
+dependency, or compatibility-target fallback is allowed. All three native
+configures explicitly set `CMAKE_DISABLE_FIND_PACKAGE_GmSSL=TRUE`: the book
+consumes `Salts::DataBind`/`Salts::CFlow`, not `Salts::Crypto`, so a transitive
+build-time GmSSL package dependency is a public SDK regression even if an
+individual CI runner happens to have GmSSL preinstalled.
 
 A failure here means that a public SDK change has made one of the book's
 executable contracts stale. It does not silently rewrite the edition snapshot.
