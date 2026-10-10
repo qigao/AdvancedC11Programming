@@ -68,7 +68,7 @@ CMeta 主线包括有限宏展开、编译期类型约束、泛型与类型关�
 - 第三章：CMeta `CMETA_INTERFACE`、`FunctionDesc/FunctionAbi` 和 `CMETA_INTERCEPTOR_TYPE` 描述 Strategy、Adapter、Interceptor；生成 exact C 调用、检查 hook 顺序、拒绝路径与 provider 借用。
 - 第十章：`cmeta_ace_lockable` 与 `CMETA_ACE_SYNCHRONIZED` 只生成有类型的同步入口；Platform 才拥有 mutex、condition、TLS 与 Leader/Followers 的线程交接。Monitor Object 不等于 CMeta 自带一把锁。
 - 第十二章：应用真正需要独立邮箱时才组合 CMeta typed Port/Strategy 与 CFlow Active Object；CNet Acceptor-Connector、SG Owner 和 NativeIO Reactor/Proactor 不因此复制执行引擎。Half-Sync/Half-Async 和 Pipes/Filters 的有界容量、需求额度仍归 CFlow。
-- 第十五章：给出按需求选择 ACE 模式的决策表，再通过严格配置文件、CMeta typed Strategy、owner-affine call lease 与静止点提交演示**应用级 Service Configurator**；增补独立配置 CNet 服务端 Owner Placement 与客户端远端 Destination 的真实 API 演示，精确区分 `choose` 与资源准入。不冒充已发布通用机制，也不声称可以自动热替换 Plugin 或 CNet 连接。
+- 第十五章：给出按需求选择 ACE 模式的决策表，再通过严格配置文件、CMeta typed Strategy、owner-affine **一次性调用 lease** 与静止点提交演示**应用级 Service Configurator**；CMeta Interface `self` 指向不可复用的借用槽位，过期 Interface 即使碰上另一活跃租约也不能复活；增补独立配置 CNet 服务端 Owner Placement 与客户端远端 Destination 的真实 API 演示，精确区分 `choose` 与资源准入。不冒充已发布通用机制，也不声称可以自动热替换 Plugin 或 CNet 连接。
 
 对后续 Salts 2.3 的接口只作**增补验证**，不反推它们已存在于固定版源码快照。安装版 C11 `ch03_cmeta_ace_patterns.c` 和 `ch12_cmeta_ace_active_object.c` 通过真实执行检查精确 Strategy/Interceptor 顺序、Scoped Locking、多线程递增、NativeIO 一次性完成、Actor STOPPED/STALE；这仍不是全部 ACE 模式、性能或多平台发布保证。任何高级模式都必须最终呈现为可检查的普通 C 数据结构、调用和所有权责任。
 

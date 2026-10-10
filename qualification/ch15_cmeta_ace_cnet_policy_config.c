@@ -70,8 +70,6 @@ typedef struct book_host {
     book_config active;
     cnet_owner_placement_hint owners[3];
     cnet_destination_hint endpoints[3];
-    book_ace_server_policy server_policy;
-    book_ace_client_policy client_policy;
     uint64_t generation;
     size_t leases;
     bool open;
@@ -82,6 +80,7 @@ typedef struct book_call_lease {
     const struct book_call_lease *identity;
     uint64_t generation;
     bool live;
+    bool spent; /* one-shot tombstone; no lease slot resurrection */
 } book_call_lease;
 
 static book_control_status book_parse(const char *path, book_config *out)
@@ -157,6 +156,26 @@ static book_control_status book_owner_only(const book_host *host)
     return BOOK_CONTROL_OK;
 }
 
+/* The Interface self is an individual, borrowed lease slot, NOT a host.
+ * Never recycle a spent slot, even after a new generation is published:
+ * otherwise a stale Interface copied earlier could regain authority (ABA).
+ * The caller keeps the slot storage alive while any stale view is inspected.
+ */
+static int book_permit(const book_call_lease *lease)
+{
+    book_host *host;
+    if (lease == NULL || lease->identity != lease ||
+        !lease->live || lease->host == NULL)
+        return SALTS_ESHUTDOWN;
+    host = lease->host;
+    if (book_owner_only(host) != BOOK_CONTROL_OK)
+        return SALTS_EPERM;
+    if (!host->open || lease->generation != host->generation ||
+        host->leases == 0u)
+        return SALTS_ESHUTDOWN;
+    return SALTS_OK;
+}
+
 /* A negative key is invalid, rather than an implicit wrap to uint64_t. */
 static int book_choose_owner(
     book_host *host, cnet_owner_placement_kind kind, int ticket, int *out)
@@ -188,13 +207,25 @@ static int book_choose_owner(
 
 static int book_server_strict(void *self, int ticket, int *out)
 {
+    book_call_lease *lease = (book_call_lease *)self;
+    int rc = book_permit(lease);
+    if (rc != SALTS_OK)
+        return rc;
+    if (lease->host->active.server != BOOK_POLICY_STRICT)
+        return SALTS_EPROTO;
     return book_choose_owner(
-        (book_host *)self, CNET_OWNER_PLACE_STRICT_KEY, ticket, out);
+        lease->host, CNET_OWNER_PLACE_STRICT_KEY, ticket, out);
 }
 static int book_server_rr(void *self, int ticket, int *out)
 {
+    book_call_lease *lease = (book_call_lease *)self;
+    int rc = book_permit(lease);
+    if (rc != SALTS_OK)
+        return rc;
+    if (lease->host->active.server != BOOK_POLICY_RR)
+        return SALTS_EPROTO;
     return book_choose_owner(
-        (book_host *)self, CNET_OWNER_PLACE_ROUND_ROBIN, ticket, out);
+        lease->host, CNET_OWNER_PLACE_ROUND_ROBIN, ticket, out);
 }
 
 /* The remote endpoint policy uses stable IDs, not final SG Owner indices. */
@@ -236,13 +267,25 @@ static int book_choose_client(
 
 static int book_client_strict(void *self, int ticket, int *out)
 {
+    book_call_lease *lease = (book_call_lease *)self;
+    int rc = book_permit(lease);
+    if (rc != SALTS_OK)
+        return rc;
+    if (lease->host->active.client != BOOK_POLICY_STRICT)
+        return SALTS_EPROTO;
     return book_choose_client(
-        (book_host *)self, CNET_DESTINATION_STRICT_KEY, ticket, out);
+        lease->host, CNET_DESTINATION_STRICT_KEY, ticket, out);
 }
 static int book_client_rr(void *self, int ticket, int *out)
 {
+    book_call_lease *lease = (book_call_lease *)self;
+    int rc = book_permit(lease);
+    if (rc != SALTS_OK)
+        return rc;
+    if (lease->host->active.client != BOOK_POLICY_RR)
+        return SALTS_EPROTO;
     return book_choose_client(
-        (book_host *)self, CNET_DESTINATION_ROUND_ROBIN, ticket, out);
+        lease->host, CNET_DESTINATION_ROUND_ROBIN, ticket, out);
 }
 
 CMETA_IMPLEMENTS(book_ace_server_policy, book_server_strict_impl, 0u,
@@ -256,15 +299,10 @@ CMETA_IMPLEMENTS(book_ace_client_policy, book_client_rr_impl, 0u,
 
 static void book_publish(book_host *host, book_config config)
 {
+    /* No Interface self is published from a shared host. Each new lease binds
+     * its own exact typed CMeta dispatch after complete config admission.
+     */
     host->active = config;
-    host->server_policy =
-        config.server == BOOK_POLICY_STRICT ?
-            book_server_strict_impl_as_book_ace_server_policy(host) :
-            book_server_rr_impl_as_book_ace_server_policy(host);
-    host->client_policy =
-        config.client == BOOK_POLICY_STRICT ?
-            book_client_strict_impl_as_book_ace_client_policy(host) :
-            book_client_rr_impl_as_book_ace_client_policy(host);
     ++host->generation;
 }
 
@@ -322,18 +360,26 @@ static book_control_status book_acquire(
         return BOOK_CONTROL_INVALID;
     if (!host->open)
         return BOOK_CONTROL_STALE;
-    if (lease->live || host->leases == SIZE_MAX ||
-        !book_ace_server_policy_valid(&host->server_policy) ||
-        !book_ace_client_policy_valid(&host->client_policy))
+    if (lease->live)
+        return BOOK_CONTROL_BUSY;
+    if (lease->spent)
+        return BOOK_CONTROL_STALE;
+    if (host->leases == SIZE_MAX)
         return BOOK_CONTROL_BUSY;
 
     lease->host = host;
     lease->identity = lease;
     lease->generation = host->generation;
     lease->live = true;
+    lease->spent = true;
     ++host->leases;
-    *server = host->server_policy; /* borrowed, no lease auto-retain */
-    *client = host->client_policy;
+    *server = host->active.server == BOOK_POLICY_STRICT ?
+        book_server_strict_impl_as_book_ace_server_policy(lease) :
+        book_server_rr_impl_as_book_ace_server_policy(lease);
+    *client = host->active.client == BOOK_POLICY_STRICT ?
+        book_client_strict_impl_as_book_ace_client_policy(lease) :
+        book_client_rr_impl_as_book_ace_client_policy(lease);
+    /* Both Interfaces now borrow THIS one-shot slot, never another lease. */
     return BOOK_CONTROL_OK;
 }
 
@@ -367,8 +413,6 @@ static book_control_status book_close(book_host *host)
     if (host->leases != 0u || host->generation == UINT64_MAX)
         return BOOK_CONTROL_BUSY;
     host->open = false;
-    host->server_policy = book_ace_server_policy_bind(NULL, NULL);
-    host->client_policy = book_ace_client_policy_bind(NULL, NULL);
     ++host->generation;
     return BOOK_CONTROL_OK;
 }
@@ -404,8 +448,9 @@ int main(void)
 {
     book_host host = {0};
     book_call_lease lease = {0}, copied = {0};
-    book_ace_server_policy server = {0};
-    book_ace_client_policy client = {0};
+    book_call_lease overlapping = {0}, after_mixed = {0}, after_rr = {0};
+    book_ace_server_policy server = {0}, retired_server = {0};
+    book_ace_client_policy client = {0}, retired_client = {0};
     book_foreign_probe foreign = {0};
     cmeta_thread_t thread = NULL;
     book_config unchanged = {BOOK_POLICY_RR, BOOK_POLICY_STRICT};
@@ -473,12 +518,31 @@ int main(void)
     BOOK_CHECK(book_release(&copied) == BOOK_CONTROL_STALE);
     BOOK_CHECK(book_release(&lease) == BOOK_CONTROL_OK);
     BOOK_CHECK(book_release(&lease) == BOOK_CONTROL_STALE);
+    retired_server = server; /* stale, but slot storage is still live */
+    retired_client = client;
     owner = remote = -17;
-    BOOK_CHECK(book_ace_server_policy_select(&server, 5, &owner) ==
+    BOOK_CHECK(book_ace_server_policy_select(&retired_server, 5, &owner) ==
                SALTS_ESHUTDOWN);
-    BOOK_CHECK(book_ace_client_policy_select(&client, 5, &remote) ==
+    BOOK_CHECK(book_ace_client_policy_select(&retired_client, 5, &remote) ==
                SALTS_ESHUTDOWN);
     BOOK_CHECK(owner == -17 && remote == -17);
+
+    /* Another unrelated lease cannot revive a retired CMeta self pointer.
+     * Owner and generation are deliberately still the same at this point.
+     */
+    BOOK_CHECK(book_acquire(&host, &overlapping, &server, &client) ==
+               BOOK_CONTROL_OK);
+    owner = remote = -99;
+    BOOK_CHECK(book_ace_server_policy_select(&retired_server, 5, &owner) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(book_ace_client_policy_select(&retired_client, 5, &remote) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(owner == -99 && remote == -99);
+    BOOK_CHECK(book_ace_server_policy_select(&server, 5, &owner) == SALTS_OK);
+    BOOK_CHECK(book_ace_client_policy_select(&client, 5, &remote) == SALTS_OK);
+    BOOK_CHECK(book_acquire(&host, &lease, &server, &client) ==
+               BOOK_CONTROL_STALE); /* one-shot lease storage cannot be reused */
+    BOOK_CHECK(book_release(&overlapping) == BOOK_CONTROL_OK);
     BOOK_CHECK(book_reload(&host, "ace_cnet_policy_invalid.cfg") == BOOK_CONTROL_INVALID);
     BOOK_CHECK(book_reload(&host, "ace_cnet_policy_unknown.cfg") == BOOK_CONTROL_INVALID);
     BOOK_CHECK(host.generation == generation);
@@ -488,19 +552,26 @@ int main(void)
     BOOK_CHECK(host.generation == generation + 1u);
     BOOK_CHECK(host.active.server == BOOK_POLICY_STRICT);
     BOOK_CHECK(host.active.client == BOOK_POLICY_RR);
-    BOOK_CHECK(book_acquire(&host, &lease, &server, &client) == BOOK_CONTROL_OK);
+    BOOK_CHECK(book_acquire(&host, &after_mixed, &server, &client) ==
+               BOOK_CONTROL_OK);
     owner = remote = -1;
+    BOOK_CHECK(book_ace_server_policy_select(&retired_server, 5, &owner) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(book_ace_client_policy_select(&retired_client, 5, &remote) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(owner == -1 && remote == -1);
     BOOK_CHECK(book_ace_server_policy_select(&server, 5, &owner) == SALTS_OK);
     BOOK_CHECK(owner == 2);
     BOOK_CHECK(book_ace_client_policy_select(&client, 5, &remote) == SALTS_OK);
     BOOK_CHECK(remote == 33); /* RR 5 % 3 => index 2, stable endpoint ID 33 */
-    BOOK_CHECK(book_release(&lease) == BOOK_CONTROL_OK);
+    BOOK_CHECK(book_release(&after_mixed) == BOOK_CONTROL_OK);
 
     /* Then switch server too; RR can select next eligible capacity hint.
      * This is still not a real handoff.reserve() admission commitment.
      */
     BOOK_CHECK(book_reload(&host, "ace_cnet_policy_rr.cfg") == BOOK_CONTROL_OK);
-    BOOK_CHECK(book_acquire(&host, &lease, &server, &client) == BOOK_CONTROL_OK);
+    BOOK_CHECK(book_acquire(&host, &after_rr, &server, &client) ==
+               BOOK_CONTROL_OK);
     host.owners[2].eligible = false;
     owner = -1;
     BOOK_CHECK(book_ace_server_policy_select(&server, 5, &owner) == SALTS_OK);
@@ -510,7 +581,7 @@ int main(void)
     BOOK_CHECK(book_ace_client_policy_select(&client, 5, &remote) == SALTS_OK);
     BOOK_CHECK(remote == 11);
     BOOK_CHECK(host.leases == 1u); /* no capacity was acquired by choose() */
-    BOOK_CHECK(book_release(&lease) == BOOK_CONTROL_OK);
+    BOOK_CHECK(book_release(&after_rr) == BOOK_CONTROL_OK);
 
     BOOK_CHECK(book_close(&host) == BOOK_CONTROL_OK);
     BOOK_CHECK(!host.open && host.leases == 0u);

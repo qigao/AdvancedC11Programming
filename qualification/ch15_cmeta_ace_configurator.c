@@ -2,7 +2,7 @@
  * ACE Service Configurator: exact typed CMeta Strategy + strict C11 config.
  *
  * The host is owner-affine and address-stable. A published Strategy borrows
- * &host->active; only an explicit live call lease permits using that borrow.
+ * its one-shot lease slot; only that explicitly live lease permits dispatch.
  * Reconfiguration is validate-then-publish, requires no live borrows, and
  * never creates threads, sockets, a plugin loader, or a hidden fallback.
  *
@@ -22,9 +22,11 @@
 #include <string.h>
 
 #define BOOK_ACE_CONFIG_METHODS(X, I) \
-    X(I, FR1, int, apply, stateful, \
+    X(I, FR2, int, apply, stateful, \
       &cmeta_type_int, CMETA_ABI_SCALAR, CMETA_RESULT_VALUE, \
-      (int, value, CMETA_PARAM_IN, &cmeta_type_int, CMETA_ABI_SCALAR))
+      (int, value, CMETA_PARAM_IN, &cmeta_type_int, CMETA_ABI_SCALAR), \
+      (int *, out, CMETA_PARAM_OUT | CMETA_PARAM_BORROWED, \
+       &cmeta_type_int_ptr, CMETA_ABI_OBJECT_POINTER))
 
 CMETA_INTERFACE(book_ace_config_strategy, BOOK_ACE_CONFIG_METHODS);
 
@@ -47,38 +49,87 @@ typedef struct book_config {
     int operand;
 } book_config;
 
-static int book_apply_add(void *self, int value)
+/* A CMeta Interface must borrow the INDIVIDUAL call lease, not the host.
+ * This one-shot slot must remain allocated while any view of it is inspected.
+ * Reusing its address is forbidden: a copied stale Interface must never gain
+ * authority again under a later, unrelated successful acquisition (ABA).
+ */
+typedef struct book_host book_host;
+typedef struct book_lease book_lease;
+struct book_host {
+    const void *owner_token;
+    book_config active;
+    uint64_t generation;
+    size_t leases;
+    bool open;
+};
+struct book_lease {
+    book_host *host;
+    const book_lease *identity;
+    uint64_t generation;
+    bool live;
+    bool spent; /* permanent tombstone, never recycled */
+};
+
+static int book_permit(const book_lease *lease)
 {
-    const book_config *config = (const book_config *)self;
-    return value + config->operand;
+    const book_host *host;
+    if (lease == NULL || lease->identity != lease ||
+        !lease->live || lease->host == NULL)
+        return SALTS_ESHUTDOWN;
+    host = lease->host;
+    if (host->owner_token != cmeta_thread_current_token())
+        return SALTS_EPERM;
+    if (!host->open || lease->generation != host->generation ||
+        host->leases == 0u)
+        return SALTS_ESHUTDOWN;
+    return SALTS_OK;
 }
 
-static int book_apply_scale(void *self, int value)
+/* Exact typed status/out separates legitimate arithmetic values from errors.
+ * Reject invalid pointer, stale borrow, wrong Strategy or signed overflow
+ * before touching caller-owned output.
+ */
+static int book_apply_add(void *self, int value, int *out)
 {
-    const book_config *config = (const book_config *)self;
-    return value * config->operand;
+    const book_lease *lease = (const book_lease *)self;
+    int rc = book_permit(lease);
+    int operand;
+    if (rc != SALTS_OK)
+        return rc;
+    if (out == NULL)
+        return SALTS_EINVAL;
+    if (lease->host->active.mode != BOOK_MODE_ADD)
+        return SALTS_EPROTO;
+    operand = lease->host->active.operand;
+    if (value > INT_MAX - operand)
+        return SALTS_ERANGE;
+    *out = value + operand;
+    return SALTS_OK;
+}
+
+static int book_apply_scale(void *self, int value, int *out)
+{
+    const book_lease *lease = (const book_lease *)self;
+    int rc = book_permit(lease);
+    int operand;
+    if (rc != SALTS_OK)
+        return rc;
+    if (out == NULL)
+        return SALTS_EINVAL;
+    if (lease->host->active.mode != BOOK_MODE_SCALE)
+        return SALTS_EPROTO;
+    operand = lease->host->active.operand;
+    if (value > INT_MAX / operand || value < INT_MIN / operand)
+        return SALTS_ERANGE;
+    *out = value * operand;
+    return SALTS_OK;
 }
 
 CMETA_IMPLEMENTS(book_ace_config_strategy, book_config_add_impl, 0u,
                  .apply = book_apply_add);
 CMETA_IMPLEMENTS(book_ace_config_strategy, book_config_scale_impl, 0u,
                  .apply = book_apply_scale);
-
-typedef struct book_host {
-    const void *owner_token;
-    book_config active;
-    book_ace_config_strategy published;
-    uint64_t generation;
-    size_t leases;
-    bool open;
-} book_host;
-
-typedef struct book_lease {
-    book_host *host;
-    const struct book_lease *identity;
-    uint64_t generation;
-    bool live;
-} book_lease;
 
 #define BOOK_CHECK(expr) do {                                          \
     if (!(expr)) {                                                     \
@@ -162,11 +213,11 @@ static book_result book_owner_check(const book_host *host)
     return BOOK_OK;
 }
 
-static book_ace_config_strategy book_bind(book_config *config)
+static book_ace_config_strategy book_bind(book_lease *lease)
 {
-    if (config->mode == BOOK_MODE_ADD)
-        return book_config_add_impl_as_book_ace_config_strategy(config);
-    return book_config_scale_impl_as_book_ace_config_strategy(config);
+    if (lease->host->active.mode == BOOK_MODE_ADD)
+        return book_config_add_impl_as_book_ace_config_strategy(lease);
+    return book_config_scale_impl_as_book_ace_config_strategy(lease);
 }
 
 static book_result book_host_open(book_host *host, const char *path)
@@ -186,7 +237,6 @@ static book_result book_host_open(book_host *host, const char *path)
         return status;
 
     host->active = candidate;
-    host->published = book_bind(&host->active);
     host->generation++;
     host->owner_token = cmeta_thread_current_token();
     host->open = true;
@@ -213,7 +263,6 @@ static book_result book_host_reload(book_host *host, const char *path)
         return BOOK_BUSY;
 
     host->active = candidate; /* stable, caller-owned storage */
-    host->published = book_bind(&host->active);
     host->generation++;
     return BOOK_OK;
 }
@@ -230,16 +279,18 @@ static book_result book_host_acquire(
         return BOOK_STALE;
     if (lease->live)
         return BOOK_BUSY;
-    if (!book_ace_config_strategy_valid(&host->published) ||
-        host->leases == SIZE_MAX)
-        return BOOK_INVALID;
+    if (lease->spent)
+        return BOOK_STALE;
+    if (host->leases == SIZE_MAX)
+        return BOOK_BUSY;
 
     lease->host = host;
     lease->identity = lease; /* copying the lease never duplicates authority */
     lease->generation = host->generation;
     lease->live = true;
+    lease->spent = true;
     ++host->leases;
-    *out = host->published; /* borrowed, not owning */
+    *out = book_bind(lease); /* self borrows this ONE-SHOT lease slot */
     return BOOK_OK;
 }
 
@@ -272,7 +323,6 @@ static book_result book_host_close(book_host *host)
     if (host->leases != 0u || host->generation == UINT64_MAX)
         return BOOK_BUSY;
     host->open = false;
-    host->published = book_ace_config_strategy_bind(NULL, NULL);
     host->generation++;
     return BOOK_OK;
 }
@@ -283,6 +333,8 @@ typedef struct book_foreign_probe {
     book_ace_config_strategy view;
     book_result result;
     book_result reload_result;
+    int direct_call_result;
+    int direct_output;
 } book_foreign_probe;
 
 static void book_foreign_try_acquire(void *user)
@@ -291,6 +343,9 @@ static void book_foreign_try_acquire(void *user)
     probe->result = book_host_acquire(probe->host, &probe->lease, &probe->view);
     probe->reload_result = book_host_reload(
         probe->host, "ace_configurator_scale.cfg");
+    probe->direct_call_result =
+        book_ace_config_strategy_apply(&probe->view, 7,
+                                       &probe->direct_output);
 }
 
 int main(void)
@@ -299,10 +354,14 @@ int main(void)
     book_config unmodified = {BOOK_MODE_SCALE, 7};
     book_ace_config_strategy view = {0};
     book_lease lease = {0};
+    book_lease overlapping = {0};
+    book_lease after_reload = {0};
     book_lease duplicate = {0};
+    book_ace_config_strategy current = {0};
     book_foreign_probe worker = {0};
     cmeta_thread_t thread = NULL;
     uint64_t generation;
+    int output = -77;
     const char *const invalid_files[] = {
         "ace_configurator_invalid.cfg",
         "ace_configurator_missing.cfg",
@@ -322,22 +381,34 @@ int main(void)
     BOOK_CHECK(host.open && host.generation == 1u);
 
     BOOK_CHECK(book_host_acquire(&host, &lease, &view) == BOOK_OK);
-    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7) == 10);
+    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7, &output) == SALTS_OK);
+    BOOK_CHECK(output == 10);
+    output = -77;
+    BOOK_CHECK(book_ace_config_strategy_apply(&view, INT_MAX, &output) ==
+               SALTS_ERANGE);
+    BOOK_CHECK(output == -77); /* overflow must fail before writing output */
+    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7, NULL) ==
+               SALTS_EINVAL);
     generation = host.generation;
     BOOK_CHECK(book_host_reload(&host, "ace_configurator_scale.cfg") ==
                BOOK_BUSY);
     BOOK_CHECK(book_host_close(&host) == BOOK_BUSY);
     BOOK_CHECK(host.generation == generation);
-    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7) == 10);
+    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7, &output) == SALTS_OK);
+    BOOK_CHECK(output == 10);
 
     /* A foreign thread cannot obtain a borrowed strategy or a lease. */
     worker.host = &host;
+    worker.view = view; /* pass copied Interface, not new ownership */
+    worker.direct_output = -77;
     BOOK_CHECK(cmeta_thread_create(&thread, book_foreign_try_acquire, &worker)
                == SALTS_OK);
     BOOK_CHECK(cmeta_thread_join(&thread) == SALTS_OK);
     cmeta_thread_destroy(&thread);
     BOOK_CHECK(worker.result == BOOK_FOREIGN);
     BOOK_CHECK(worker.reload_result == BOOK_FOREIGN);
+    BOOK_CHECK(worker.direct_call_result == SALTS_EPERM);
+    BOOK_CHECK(worker.direct_output == -77);
     BOOK_CHECK(!worker.lease.live && host.leases == 1u);
 
     duplicate = lease; /* an ordinary struct copy cannot duplicate authority */
@@ -346,6 +417,24 @@ int main(void)
     BOOK_CHECK(book_host_release(&lease) == BOOK_OK);
     BOOK_CHECK(book_host_release(&lease) == BOOK_STALE);
     BOOK_CHECK(host.leases == 0u);
+    output = -77;
+    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7, &output) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(output == -77);
+
+    /* An unrelated live lease must never revive the old copied Interface. */
+    BOOK_CHECK(book_host_acquire(&host, &overlapping, &current) == BOOK_OK);
+    BOOK_CHECK(book_ace_config_strategy_apply(&current, 7, &output) == SALTS_OK);
+    BOOK_CHECK(output == 10);
+    output = -77;
+    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7, &output) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(output == -77);
+    BOOK_CHECK(book_host_acquire(&host, &lease, &view) == BOOK_STALE);
+    BOOK_CHECK(book_host_release(&overlapping) == BOOK_OK);
+    BOOK_CHECK(book_ace_config_strategy_apply(&current, 7, &output) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(output == -77);
 
     for (size_t i = 0u; i < sizeof(invalid_files)/sizeof(invalid_files[0]); ++i) {
         BOOK_CHECK(book_host_reload(&host, invalid_files[i]) == BOOK_INVALID);
@@ -353,9 +442,20 @@ int main(void)
     }
     BOOK_CHECK(book_host_reload(&host, "ace_configurator_scale.cfg") == BOOK_OK);
     BOOK_CHECK(host.generation == generation + 1u);
-    BOOK_CHECK(book_host_acquire(&host, &lease, &view) == BOOK_OK);
-    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7) == 14);
-    BOOK_CHECK(book_host_release(&lease) == BOOK_OK);
+    BOOK_CHECK(book_host_acquire(&host, &after_reload, &current) == BOOK_OK);
+    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7, &output) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(output == -77);
+    BOOK_CHECK(book_ace_config_strategy_apply(&current, 7, &output) == SALTS_OK);
+    BOOK_CHECK(output == 14);
+    output = -77;
+    BOOK_CHECK(book_ace_config_strategy_apply(&current, INT_MAX, &output) ==
+               SALTS_ERANGE);
+    BOOK_CHECK(output == -77); /* multiplication cannot overflow silently */
+    BOOK_CHECK(book_host_release(&after_reload) == BOOK_OK);
+    BOOK_CHECK(book_ace_config_strategy_apply(&current, 7, &output) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(output == -77);
 
     BOOK_CHECK(book_host_close(&host) == BOOK_OK);
     BOOK_CHECK(!host.open && host.leases == 0u);
