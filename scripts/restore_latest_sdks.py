@@ -8,10 +8,14 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import platform
 import re
 import shutil
 import subprocess
+import sys
+import tempfile
 import urllib.request
+import zipfile
 
 
 SEMVER = re.compile(
@@ -113,17 +117,37 @@ def required_checksum(contents, asset_name):
     return matches[0]
 
 
-def restore(repo, package_name, root, cmake_package, require_idlc=False):
+def validate_sdk_rid(rid, system, architecture):
+    """Require an exact runner/SDK ABI match, never a cross-RID fallback."""
+    supported = {
+        ("linux", "x86_64"): "linux-x64",
+        ("linux", "amd64"): "linux-x64",
+        ("win32", "amd64"): "windows-x64",
+        ("darwin", "arm64"): "macos-arm64",
+        ("darwin", "aarch64"): "macos-arm64",
+    }
+    expected = supported.get((system.lower(), architecture.lower()))
+    if expected is None:
+        raise RuntimeError(f"unsupported SDK host: {system}/{architecture}")
+    if rid != expected:
+        raise RuntimeError(
+            f"SDK RID {rid!r} does not match runner {system}/{architecture}; "
+            f"expected {expected!r}"
+        )
+    return rid
+
+
+def restore(repo, package_name, root, cmake_package, rid, require_idlc=False):
     release, asset = select_release(load_releases(repo), package_name)
     root = Path(root)
-    archive = Path("/tmp") / f"{package_name}.nupkg"
+    archive = Path(os.environ.get("RUNNER_TEMP", tempfile.gettempdir())) / f"{package_name}.nupkg"
     download(asset["browser_download_url"], archive)
 
     sums = [a for a in release.get("assets", []) if a.get("name") == "SHA256SUMS"]
     if len(sums) > 1:
         raise RuntimeError(f"duplicate SHA256SUMS for {repo}")
     if sums:
-        sums_file = Path("/tmp") / f"{package_name}.SHA256SUMS"
+        sums_file = archive.with_suffix(".SHA256SUMS")
         download(sums[0]["browser_download_url"], sums_file)
         expected = required_checksum(sums_file.read_text(), asset["name"])
         actual = hashlib.sha256(archive.read_bytes()).hexdigest()
@@ -133,15 +157,20 @@ def restore(repo, package_name, root, cmake_package, require_idlc=False):
     if root.exists():
         shutil.rmtree(root)
     root.mkdir(parents=True)
-    # Unlike zipfile.extractall(), system unzip preserves host-tool mode bits.
-    subprocess.run(["unzip", "-q", "-o", str(archive), "-d", str(root)], check=True)
+    # Unix requires unzip to preserve the host compiler's packaged 0755 mode.
+    # Windows does not carry Unix executable bits and ships salts-idlc.exe.
+    if os.name == "nt":
+        with zipfile.ZipFile(archive) as content:
+            content.extractall(root)
+    else:
+        subprocess.run(["unzip", "-q", "-o", str(archive), "-d", str(root)], check=True)
 
-    prefix = root / "sdk" / "linux-x64"
+    prefix = root / "sdk" / rid
     config = prefix / "lib" / "cmake" / cmake_package / f"{cmake_package}Config.cmake"
     if not config.is_file():
         raise RuntimeError(f"{asset['name']}: missing installed {config}")
     if require_idlc:
-        compiler = prefix / "bin" / "salts-idlc"
+        compiler = prefix / "bin" / ("salts-idlc.exe" if os.name == "nt" else "salts-idlc")
         if not compiler.is_file() or not os.access(compiler, os.X_OK):
             raise RuntimeError(f"{asset['name']}: host compiler not executable: {compiler}")
     print(f"Selected {repo}@{release['tag_name']}: {asset['name']}", flush=True)
@@ -152,15 +181,28 @@ def main():
     environment = os.environ.get("GITHUB_ENV")
     if not environment:
         raise RuntimeError("GITHUB_ENV is required to publish restored SDK roots")
-
-    salts = restore("qigao/salts", "Salts.Native", "/tmp/salts-native", "Salts")
+    rid = validate_sdk_rid(os.environ.get("BOOK_SDK_RID"), sys.platform, platform.machine())
+    temp = Path(os.environ.get("RUNNER_TEMP", tempfile.gettempdir()))
+    salts = restore("qigao/salts", "Salts.Native", temp / "salts-native", "Salts", rid)
     utils = restore(
-        "qigao/salts-utils", "SaltsUtils.Native", "/tmp/saltsutils-native",
-        "SaltsUtils", require_idlc=True
+        "qigao/salts-utils", "SaltsUtils.Native", temp / "saltsutils-native",
+        "SaltsUtils", rid, require_idlc=True
     )
     with open(environment, "a", encoding="utf-8") as env:
-        env.write(f"SALTS_SDK_PREFIX={salts}\n")
-        env.write(f"SALTS_UTILS_SDK_PREFIX={utils}\n")
+        env.write(f"SALTS_SDK_PREFIX={salts.as_posix()}\n")
+        env.write(f"SALTS_UTILS_SDK_PREFIX={utils.as_posix()}\n")
+        if sys.platform == "darwin":
+            env.write(f"DYLD_LIBRARY_PATH={(utils / 'lib').as_posix()}:{(salts / 'lib').as_posix()}\n")
+        elif sys.platform == "linux":
+            env.write(f"LD_LIBRARY_PATH={(utils / 'lib').as_posix()}:{(salts / 'lib').as_posix()}\n")
+    if os.name == "nt":
+        github_path = os.environ.get("GITHUB_PATH")
+        if not github_path:
+            raise RuntimeError("GITHUB_PATH required for Windows installed DLL closure")
+        with open(github_path, "a", encoding="utf-8") as path:
+            for root in (utils, salts):
+                path.write(f"{(root / 'bin').as_posix()}\n")
+                path.write(f"{(root / 'lib').as_posix()}\n")
 
 
 if __name__ == "__main__":
