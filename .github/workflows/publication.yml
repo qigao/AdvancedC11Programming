@@ -84,6 +84,12 @@ jobs:
             -DCMAKE_FIND_USE_PACKAGE_REGISTRY=FALSE \
             -DCMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY=FALSE
 
+      - name: Qualify generated Service output (verbose on failure)
+        env:
+          SALTS_ROOT: ${{ env.SALTS_SDK_PREFIX }}
+          SALTS_UTILS_ROOT: ${{ env.SALTS_UTILS_SDK_PREFIX }}
+          LD_LIBRARY_PATH: ${{ env.SALTS_UTILS_SDK_PREFIX }}/lib:${{ env.SALTS_SDK_PREFIX }}/lib
+        run: cmake --build build/qualification --target book_databind_service_idl_codegen --verbose
       - name: Build qualification gates
         env:
           SALTS_ROOT: ${{ env.SALTS_SDK_PREFIX }}
