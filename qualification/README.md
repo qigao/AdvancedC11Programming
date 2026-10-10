@@ -47,7 +47,8 @@ Current gates:
 - `ch07_direct_no_fallback.c`: an eligible generated Filter/Map Direct pipeline executes through StaticTarget stages, while an effectful stateful Direct schema returns `INELIGIBLE`; explicitly selecting Plan for the same callable succeeds without any hidden Direct fallback;
 - `ch06_normalize_idempotence.c`: a real ZIP surface Graph lowers to an independent primitive snapshot, source structure/version remain unchanged, and normalizing the normalized Graph again yields a structurally equal snapshot with its own version token;
 - `ch06_authorized_rewrite.c`: an IDEMPOTENT endomap pair admits exactly one idempotent-map elimination with a bound proof-trace event, while behaviorally similar code without the property contract retains both callable applications and emits no semantic rewrite event;
-- `ch08_databind_binding_plan.c`: installed `salts-idlc` generates one native Service contract; runtime compiles an immutable BindingPlan, survives codec release, applies an absent-field default during `bind_call`, invokes the generated ordinary C service, and consumes exactly one call-lifetime teardown obligation;
+- `ch08_native_value_service.c`: Contract-only `ARTIFACTS NATIVE` emits exact plain-CMeta-VALUE Service records, generated FunctionDesc/NativeExecution and caller-owned binding metadata; `DataBindNativePlan` initializes and clears the request without a Binary codec or legacy `*_native.c`;
+- `ch08_databind_binding_plan.c`: the *separate, explicitly selected* `BINARY_CODEC` Service demonstrates optional/default ingress, immutable BindingPlan, ordinary C invocation and once-only call-lifetime cleanup. It is not evidence that optional state is currently admitted as Contract-only Native VALUE;
 - `ch08_databind_public_sdk.c`: independent SaltsUtils installed consumer links only the canonical `Salts::DataBind` target and verifies the public DataBind header/runtime version contract;
 - `ch09_reactive_demand.c`: downstream demand limits emitted values exactly, remaining publisher values survive between requests, terminal completion occurs once, and post-terminal request returns CLOSED without producing more callbacks;
 - `ch09_wait_wake.c`: readiness Publisher WAIT preserves outstanding demand, wake permits retry without creating demand, later request resumes remaining values, and stale wake after terminal produces no callbacks;
@@ -102,5 +103,12 @@ The WAIT/wake gate keeps readiness and demand separate: WOULD_BLOCK/WAIT leaves 
 The Executor-settlement gate treats FULL and CLOSED as ownership-preserving protocol results. Accepted work must remain conserved until completion/cancellation; rejected descriptors stay entirely with the caller and execute no callbacks.
 
 The Machine staged-commit gate keeps admission, action evaluation and commit separate: callbacks may fail before commit without publishing partial Machine-owned state, while a successful transition commits exactly once and terminal state closes further admission.
+
+The SaltsUtils 4.3 NativeSourceIR split is intentional: Contract-only Service
+execution currently admits plain VALUE records, not optional/nullable VIEW
+overlays. The Binary-backed optional/default example requires the explicit
+`BINARY_CODEC` selector. Neither mode is ever chosen as a hidden fallback.
+The current SDK pair is verified by installation and executable consumer gates,
+not inferred from source snapshots.
 
 The DataBind SDK smoke remains the package/public-target admission gate. The Service BindingPlan gate separately exercises installed IDL generation, generated native binding, runtime plan compilation, defaulted ingress binding, ordinary C invocation, and single-owner frame teardown without source-tree includes or compatibility targets.
