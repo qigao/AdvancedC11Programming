@@ -167,6 +167,10 @@ static int book_choose_owner(
 
     if (host == NULL || out == NULL || ticket < 0)
         return SALTS_EINVAL;
+    if (book_owner_only(host) != BOOK_CONTROL_OK)
+        return SALTS_EPERM;
+    if (!host->open || host->leases == 0u)
+        return SALTS_ESHUTDOWN;
     input.size = sizeof(input);
     input.version = CNET_OWNER_PLACEMENT_VERSION;
     input.kind = kind;
@@ -203,6 +207,10 @@ static int book_choose_client(
 
     if (host == NULL || out == NULL || ticket < 0)
         return SALTS_EINVAL;
+    if (book_owner_only(host) != BOOK_CONTROL_OK)
+        return SALTS_EPERM;
+    if (!host->open || host->leases == 0u)
+        return SALTS_ESHUTDOWN;
     selection.size = sizeof(selection);
     selection.version = CNET_DESTINATION_POLICY_VERSION;
     selection.kind = kind;
@@ -372,6 +380,10 @@ typedef struct book_foreign_probe {
     book_ace_client_policy client;
     book_control_status acquire_status;
     book_control_status reload_status;
+    int owner_status;
+    int client_status;
+    int out_owner;
+    int out_client;
 } book_foreign_probe;
 
 static void book_foreign_try(void *user)
@@ -382,6 +394,10 @@ static void book_foreign_try(void *user)
                      &probe->server, &probe->client);
     probe->reload_status =
         book_reload(probe->host, "ace_cnet_policy_rr.cfg");
+    probe->owner_status =
+        book_ace_server_policy_select(&probe->server, 5, &probe->out_owner);
+    probe->client_status =
+        book_ace_client_policy_select(&probe->client, 5, &probe->out_client);
 }
 
 int main(void)
@@ -406,6 +422,8 @@ int main(void)
     BOOK_CHECK(book_parse("ace_cnet_policy_invalid.cfg", &unchanged) ==
                BOOK_CONTROL_INVALID);
     BOOK_CHECK(book_parse("ace_cnet_policy_missing.cfg", &unchanged) ==
+               BOOK_CONTROL_INVALID);
+    BOOK_CHECK(book_parse("ace_cnet_policy_unknown.cfg", &unchanged) ==
                BOOK_CONTROL_INVALID);
     BOOK_CHECK(unchanged.server == BOOK_POLICY_RR &&
                unchanged.client == BOOK_POLICY_STRICT);
@@ -438,18 +456,31 @@ int main(void)
     BOOK_CHECK(host.generation == generation);
 
     foreign.host = &host;
+    foreign.server = server;  /* test a copied Interface borrowed from caller */
+    foreign.client = client;
+    foreign.out_owner = foreign.out_client = -77;
     BOOK_CHECK(cmeta_thread_create(&thread, book_foreign_try, &foreign) == SALTS_OK);
     BOOK_CHECK(cmeta_thread_join(&thread) == SALTS_OK);
     cmeta_thread_destroy(&thread);
     BOOK_CHECK(foreign.acquire_status == BOOK_CONTROL_FOREIGN);
     BOOK_CHECK(foreign.reload_status == BOOK_CONTROL_FOREIGN);
+    BOOK_CHECK(foreign.owner_status == SALTS_EPERM);
+    BOOK_CHECK(foreign.client_status == SALTS_EPERM);
+    BOOK_CHECK(foreign.out_owner == -77 && foreign.out_client == -77);
     BOOK_CHECK(host.leases == 1u);
 
     copied = lease;
     BOOK_CHECK(book_release(&copied) == BOOK_CONTROL_STALE);
     BOOK_CHECK(book_release(&lease) == BOOK_CONTROL_OK);
     BOOK_CHECK(book_release(&lease) == BOOK_CONTROL_STALE);
+    owner = remote = -17;
+    BOOK_CHECK(book_ace_server_policy_select(&server, 5, &owner) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(book_ace_client_policy_select(&client, 5, &remote) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(owner == -17 && remote == -17);
     BOOK_CHECK(book_reload(&host, "ace_cnet_policy_invalid.cfg") == BOOK_CONTROL_INVALID);
+    BOOK_CHECK(book_reload(&host, "ace_cnet_policy_unknown.cfg") == BOOK_CONTROL_INVALID);
     BOOK_CHECK(host.generation == generation);
 
     /* Change client policy only. Server stays pinned; client uses RR ticket. */
