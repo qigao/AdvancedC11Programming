@@ -19,7 +19,7 @@
 - 展开调用适配函数，理解参数绑定、类型擦除及其存储与生存期前提。
 - 组合有类型的计算图与 Stream，用伪代码、不变量和证明检查变换的正确性。
 - 在 DataBind、CFlow 与 CMeta Plugin 应用中处理契约绑定、背压、取消、清理和 ABI。
-- 用 **CMeta 实现 ACE 设计模式**：有类型的 Strategy/Interceptor、Platform 支持的 Scoped Locking、按需组合的 CFlow Active Object；CNet/NativeIO 仍负责 Reactor/Proactor 与 SG 网络。新增了真实 TCP 下的 Reactor 风格 Acceptor-Connector 派发与 Proactor SG completion 两条安装版 C11 对照路径，还通过应用级 Service Configurator 独立配置服务端 Owner Placement 和客户端 Destination Policy，并直接验证 CNet 的公开策略 API。参见[第三章](./cn/ch-03.md)、[第十章](./cn/ch-09.md)、[第十二章](./cn/ch-11.md)及[第十五章模式选择表](./cn/ch-15.md)。
+- 用 **CMeta 实现 ACE 设计模式**：有类型的 Strategy/Interceptor、Platform 支持的 Scoped Locking、Monitor Object、真实 Thread-Specific Storage 与应用级 CPU 事件 Leader/Followers、按需组合的 CFlow Active Object；CNet/NativeIO 仍负责 Reactor/Proactor 与 SG 网络。新增了真实 TCP 下的 Reactor 风格 Acceptor-Connector 派发与 Proactor SG completion 两条安装版 C11 对照路径，还通过应用级 Service Configurator 独立配置服务端 Owner Placement 和客户端 Destination Policy，并直接验证 CNet 的公开策略 API。参见[第三章](./cn/ch-03.md)、[第十章](./cn/ch-09.md)、[第十二章](./cn/ch-11.md)及[第十五章模式选择表](./cn/ch-15.md)。
 
 ## 示例：从一个普通 C 调用开始
 

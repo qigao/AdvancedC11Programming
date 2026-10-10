@@ -66,7 +66,7 @@ CMeta 主线包括有限宏展开、编译期类型约束、泛型与类型关�
 本书不另设一套继承式 ACE Runtime，而把设计模式的**合同与执行者**按层解释和验证：
 
 - 第三章：CMeta `CMETA_INTERFACE`、`FunctionDesc/FunctionAbi` 和 `CMETA_INTERCEPTOR_TYPE` 描述 Strategy、Adapter、Interceptor；生成 exact C 调用、检查 hook 顺序、拒绝路径与 provider 借用。
-- 第十章：`cmeta_ace_lockable` 与 `CMETA_ACE_SYNCHRONIZED` 只生成有类型的同步入口；Platform 才拥有 mutex、condition、TLS 与 Leader/Followers 的线程交接。新增 `ch10_cmeta_ace_monitor.c` 独立的安装版 C11 资格测试，实际执行 Monitor Object 的单容量条件变量唤醒、关闭时 broadcast、join-before-destroy，并验证两个真正的 Platform Thread-Specific Storage 实例。Monitor Object 不等于 CMeta 自带一把锁。
+- 第十章：`cmeta_ace_lockable` 与 `CMETA_ACE_SYNCHRONIZED` 只生成有类型的同步入口；Platform 才拥有 mutex、condition、TLS 与 Leader/Followers 的线程交接。独立安装版 `ch10_cmeta_ace_monitor.c` 实测 Monitor Object 单容量唤醒、关闭 broadcast、join-before-destroy 与真实 Platform TLS。新增 `ch10_cmeta_ace_leader_followers.c` 使用两个真正 Worker 和应用自有 CPU 事件队列，先显式选举下一任 Leader、后执行可阻塞 Handler，验证第二任务可在第一任务阻塞时结算、拒绝 FULL、关闭 drain 和计数守恒；不复刻 SG NativeIO 的单一 observe Owner。Monitor Object 不等于 CMeta 自带一把锁。
 - 第十二章：应用真正需要独立邮箱时才组合 CMeta typed Port/Strategy 与 CFlow Active Object；CNet Acceptor-Connector、SG Owner 和 NativeIO Reactor/Proactor 不因此复制执行引擎。Half-Sync/Half-Async 和 Pipes/Filters 的有界容量、需求额度仍归 CFlow。
 - 第十五章：给出按需求选择 ACE 模式的决策表，再通过严格配置文件、CMeta typed Strategy、owner-affine **一次性调用 lease** 与静止点提交演示**应用级 Service Configurator**；CMeta Interface `self` 指向不可复用的借用槽位，过期 Interface 即使碰上另一活跃租约也不能复活；增补独立配置 CNet 服务端 Owner Placement 与客户端远端 Destination 的真实 API 演示，精确区分 `choose` 与资源准入。不冒充已发布通用机制，也不声称可以自动热替换 Plugin 或 CNet 连接。
 

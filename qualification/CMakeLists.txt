@@ -461,6 +461,21 @@ target_link_libraries(
 # ACE Monitor Object: real Platform mutex/condition and Thread-Specific
 # Storage, exposed through a fully reflected borrowed CMeta Interface.
 # No Actor mailbox, second scheduler or undisclosed worker runtime.
+# Optional CPU-event ACE Leader/Followers. One application owns bounded
+# event admission and baton election; CMeta reflects the exact callback;
+# Platform owns real mutex/condition and worker thread resources.
+book_qualification_gate(
+  book_ch10_cmeta_ace_leader_followers
+  ch10_cmeta_ace_leader_followers.c)
+target_link_libraries(
+  book_ch10_cmeta_ace_leader_followers
+  PRIVATE
+    Salts::CMeta
+    Salts::Platform)
+set_tests_properties(book_ch10_cmeta_ace_leader_followers PROPERTIES
+  TIMEOUT 25
+  LABELS "cmeta;ace;leader-followers;cpu-event;installed")
+
 book_qualification_gate(
   book_ch10_cmeta_ace_monitor
   ch10_cmeta_ace_monitor.c)
