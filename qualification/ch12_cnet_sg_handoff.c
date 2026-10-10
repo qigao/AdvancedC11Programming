@@ -6,10 +6,15 @@
  * runs its callbacks, and retires the Manager record before releasing credit.
  * Each SG shard has exactly one NativeIO observe authority (host lease).
  *
+ * The client first selects a stable remote endpoint ID; the server later
+ * selects a local final SG Owner. Neither decision reserves capacity or
+ * authorizes retry. Both policies use the installed public CNet SDK.
+ *
  * Reference behavior: Salts v2.3 CNet SG handoff test; no Actor or extra
  * transport engine, no implicit retry, no private source-tree headers.
  */
 #include <cnet/cnet.h>
+#include <cnet/destination_policy.h>
 #include <cnet/handoff.h>
 #include <cnet/manager.h>
 #include <cnet/owner_placement.h>
@@ -43,7 +48,9 @@ typedef struct book_lane {
     cnet_handoff_ticket taken_credit;
     const void *owner_token;
     size_t connected, terminal, bytes, sent, recycled;
-    size_t accepted, published, taken, placement;
+    size_t accepted, published, taken, placement, placement_denied;
+    size_t remote_selected, remote_denied, connect_attempts;
+    uint64_t remote_endpoint_id;
     int status;
     bool sending, close_allowed, closing, finished, client_stopped;
 } book_lane;
@@ -227,15 +234,56 @@ static void book_initialize(native_io_sharded_context *context, void *user)
     }
 }
 
+/* Choose the client remote identity first; only a later call can dial. */
 static void book_connect(native_io_sharded_context *context, void *user)
 {
     book_lane *lane = (book_lane *)user;
     cnet_observer observer = book_observer(lane);
+    /* ID 101 maps to the actual listener's loopback endpoint. ID 202 is
+     * an advisory alternative: the test must never dial it on rejection. */
+    cnet_destination_hint hints[2] = {
+        {101u, 1u, 3u, false}, {202u, 1u, 3u, true}
+    };
+    cnet_destination_selection policy = {0};
+    cnet_destination_result selected = {0};
     if (native_io_sharded_context_shard(context) != 0u ||
         lane->shard != 0u || !book_on_owner(lane)) {
         book_error(lane, SALTS_EPERM);
         return;
     }
+
+    policy.size = sizeof(policy);
+    policy.version = CNET_DESTINATION_POLICY_VERSION;
+    policy.kind = CNET_DESTINATION_EXPLICIT;
+    policy.endpoints = hints;
+    policy.endpoint_count = 2u;
+    policy.explicit_endpoint_id = 101u;
+    policy.snapshot_generation = 17u;
+    policy.now_ms = 10u;
+    policy.expires_at_ms = 100u;
+    /* The pinned peer is ineligible while another advisory hint is eligible.
+     * Reject without reroute, transport creation, or callback delivery. */
+    if (cnet_destination_choose(&policy, &selected) != SALTS_ENOBUFS ||
+        selected.index != SIZE_MAX || selected.endpoint_id != 0u ||
+        lane->connect_attempts != 0u) {
+        book_error(lane, SALTS_EPROTO);
+        return;
+    }
+    ++lane->remote_denied;
+
+    hints[0].eligible = true;
+    BOOK_CALL(lane, cnet_destination_choose(&policy, &selected));
+    if (selected.index != 0u || selected.endpoint_id != 101u ||
+        selected.snapshot_generation != policy.snapshot_generation ||
+        lane->connect_attempts != 0u) {
+        book_error(lane, SALTS_EPROTO);
+        return;
+    }
+    /* The application resolves stable ID 101 to the real listener address.
+     * cnet_destination_choose did not dial or reserve a protocol pool slot. */
+    lane->remote_endpoint_id = selected.endpoint_id;
+    ++lane->remote_selected;
+    ++lane->connect_attempts;
     BOOK_CALL(lane, cnet_connect_endpoint(
         &lane->client, &lane->local, NULL, &observer, &lane->connection));
 }
@@ -251,20 +299,33 @@ static void book_publish(book_lane *lane)
     book_case *test = lane->test;
     int rc;
 
-    owners[0].eligible = owners[1].eligible = true;
+    owners[0].eligible = true;
+    owners[BOOK_FINAL_OWNER].eligible = false;
     placement.size = sizeof(placement);
     placement.version = CNET_OWNER_PLACEMENT_VERSION;
-    placement.kind = CNET_OWNER_PLACE_EXPLICIT;
+    placement.kind = CNET_OWNER_PLACE_STRICT_KEY;
     placement.owners = owners;
     placement.owner_count = BOOK_OWNERS;
-    placement.explicit_owner = BOOK_FINAL_OWNER;
-    ++lane->placement;
+    placement.key_known = true;
+    placement.key_hash = BOOK_FINAL_OWNER; /* 1 % 2 -> Owner 1. */
+
+    /* An unavailable strict-key Owner is not silently replaced by Owner 0,
+     * and refusal occurs before any accepted socket leaves the listener. */
+    rc = cnet_owner_placement_choose(&placement, &selected);
+    if (rc != SALTS_ENOBUFS || selected != SIZE_MAX ||
+        lane->published != 0u || lane->placement != 0u) {
+        book_error(lane, SALTS_EPROTO);
+        return;
+    }
+    ++lane->placement_denied;
+
+    owners[BOOK_FINAL_OWNER].eligible = true;
     rc = cnet_owner_placement_choose(&placement, &selected);
     if (rc != SALTS_OK || selected != BOOK_FINAL_OWNER) {
         book_error(lane, SALTS_EPROTO);
         return;
     }
-
+    ++lane->placement;
     BOOK_CALL(lane, cnet_listener_accept_detached(&lane->listener, &accepted));
     BOOK_CALL(lane, cnet_handoff_reserve(&test->inbox, &credit));
 
@@ -509,7 +570,12 @@ int main(void)
         BOOK_CHECK(lane->bytes == BOOK_PAYLOAD && lane->sent == BOOK_PAYLOAD);
         BOOK_CHECK(lane->client.impl == NULL);
     }
+    BOOK_CHECK(test.lanes[0].remote_denied == 1u);
+    BOOK_CHECK(test.lanes[0].remote_selected == 1u);
+    BOOK_CHECK(test.lanes[0].remote_endpoint_id == 101u);
+    BOOK_CHECK(test.lanes[0].connect_attempts == 1u);
     BOOK_CHECK(test.lanes[0].accepted == 1u);
+    BOOK_CHECK(test.lanes[0].placement_denied == 1u);
     BOOK_CHECK(test.lanes[0].placement == 1u);
     BOOK_CHECK(test.lanes[0].published == 1u);
     BOOK_CHECK(test.lanes[1].taken == 1u);
