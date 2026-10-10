@@ -66,6 +66,10 @@ rewriting those earlier implementation claims or using source-tree dependencies.
   lifecycle. Upstream CMeta synchronization, Leader/Followers, and CFlow
   Half-Sync/Pipes conformance tests are source evidence, not a claim that
   the book has reimplemented every ACE pattern.
+- `qualification/ch15_cmeta_ace_configurator.c` adds an application-owned
+  Service Configurator with a strict, real configuration file, exact CMeta
+  Strategy contract and quiescent, generation-safe publication. This is an
+  **illustrative application**, not a generic ACE or DataBind hot-reload runtime.
 - `qualification/ch03_cmeta_ace_patterns.c` and
   `qualification/ch12_cmeta_ace_active_object.c` are independently built
   **latest-published-SDK C11 consumers** exercising those selected public
