@@ -85,7 +85,9 @@ rewriting those earlier implementation claims or using source-tree dependencies.
   This is not an upstream generic ACE Configurator implementation.
 - `qualification/ch15_cmeta_ace_configurator.c` adds an application-owned
   Service Configurator with a strict, real configuration file, exact CMeta
-  Strategy contract and quiescent, generation-safe publication. The CMeta
+  FR2 status/out Strategy contract and quiescent, generation-safe publication.
+  Failed calls (stale, foreign, null OUT, signed overflow) preserve output;
+  native arithmetic results cannot alias Salts error codes. The CMeta
   `self` borrows a caller-owned **nonreused one-shot call lease**, never an
   unchecked host pointer. The slot stays live as storage while retired
   Interfaces are inspected, and dispatch refuses stale calls even during an
