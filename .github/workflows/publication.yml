@@ -99,6 +99,7 @@ jobs:
             "-DCMAKE_PREFIX_PATH=$SALTS_SDK_PREFIX;$SALTS_UTILS_SDK_PREFIX" \
             "-DSalts_DIR=$SALTS_SDK_PREFIX/lib/cmake/Salts" \
             "-DSaltsUtils_DIR=$SALTS_UTILS_SDK_PREFIX/lib/cmake/SaltsUtils" \
+            -DCMAKE_DISABLE_FIND_PACKAGE_GmSSL=TRUE \
             -DCMAKE_FIND_USE_PACKAGE_REGISTRY=FALSE \
             -DCMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY=FALSE
 
@@ -115,6 +116,7 @@ jobs:
             "-DCMAKE_PREFIX_PATH=$env:SALTS_SDK_PREFIX;$env:SALTS_UTILS_SDK_PREFIX" `
             "-DSalts_DIR=$env:SALTS_SDK_PREFIX/lib/cmake/Salts" `
             "-DSaltsUtils_DIR=$env:SALTS_UTILS_SDK_PREFIX/lib/cmake/SaltsUtils" `
+            -DCMAKE_DISABLE_FIND_PACKAGE_GmSSL=TRUE `
             -DCMAKE_FIND_USE_PACKAGE_REGISTRY=FALSE `
             -DCMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY=FALSE
           if ($LASTEXITCODE -ne 0) { throw "Windows SDK CMake configure failed" }
