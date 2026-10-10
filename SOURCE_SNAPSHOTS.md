@@ -73,6 +73,13 @@ rewriting those earlier implementation claims or using source-tree dependencies.
   lifecycle. Upstream CMeta synchronization, Leader/Followers, and CFlow
   Half-Sync/Pipes conformance tests are source evidence, not a claim that
   the book has reimplemented every ACE pattern.
+- `qualification/ch10_cmeta_ace_monitor.c` independently qualifies later
+  installed CMeta ACE Monitor Object using the public Platform mutex,
+  condition and native worker threads, exact reflected typed put/take/close
+  dispatch, wake/close/drain and join-before-destroy obligations. The same
+  C11 program shows real `SALTS_THREAD_LOCAL` instance separation across
+  concurrent workers and nested calls; it does not synthesize a new
+  scheduler, Actor mailbox or general fairness/performance guarantee.
 - `qualification/ch15_cmeta_ace_cnet_policy_config.c` adds a subsequent
   **installed public CNet Strategy consumer** composing two separate CMeta
   Interfaces: local SG final Owner Placement and remote client Destination
