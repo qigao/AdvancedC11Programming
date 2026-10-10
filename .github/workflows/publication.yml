@@ -53,26 +53,44 @@ jobs:
           retention-days: 14
 
   qualification:
-    name: Compile executable book gates
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    name: Compile executable book gates (${{ matrix.rid }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            rid: linux-x64
+          - runner: windows-2022
+            rid: windows-x64
+          - runner: macos-15
+            rid: macos-arm64
+    env:
+      BOOK_SDK_RID: ${{ matrix.rid }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Test latest SDK release selection
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Test latest SDK release selection and RID matching
         run: python -m unittest discover -s scripts -p 'test_restore_latest_sdks.py'
 
       - name: Restore latest published Salts and SaltsUtils SDKs
         env:
           GH_TOKEN: ${{ github.token }}
         run: python scripts/restore_latest_sdks.py
-      - name: Configure qualification gates
+
+      - name: Configure qualification gates (Unix)
+        if: matrix.rid != 'windows-x64'
         env:
           SALTS_ROOT: ${{ env.SALTS_SDK_PREFIX }}
           SALTS_UTILS_ROOT: ${{ env.SALTS_UTILS_SDK_PREFIX }}
-          LD_LIBRARY_PATH: ${{ env.SALTS_UTILS_SDK_PREFIX }}/lib:${{ env.SALTS_SDK_PREFIX }}/lib
         shell: bash
         run: |
           set -euo pipefail
@@ -81,25 +99,42 @@ jobs:
             "-DCMAKE_PREFIX_PATH=$SALTS_SDK_PREFIX;$SALTS_UTILS_SDK_PREFIX" \
             "-DSalts_DIR=$SALTS_SDK_PREFIX/lib/cmake/Salts" \
             "-DSaltsUtils_DIR=$SALTS_UTILS_SDK_PREFIX/lib/cmake/SaltsUtils" \
+            -DCMAKE_DISABLE_FIND_PACKAGE_GmSSL=TRUE \
             -DCMAKE_FIND_USE_PACKAGE_REGISTRY=FALSE \
             -DCMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY=FALSE
+
+      - name: Configure qualification gates (Windows)
+        if: matrix.rid == 'windows-x64'
+        env:
+          SALTS_ROOT: ${{ env.SALTS_SDK_PREFIX }}
+          SALTS_UTILS_ROOT: ${{ env.SALTS_UTILS_SDK_PREFIX }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S qualification -B build/qualification `
+            -DCMAKE_BUILD_TYPE=Release `
+            "-DCMAKE_PREFIX_PATH=$env:SALTS_SDK_PREFIX;$env:SALTS_UTILS_SDK_PREFIX" `
+            "-DSalts_DIR=$env:SALTS_SDK_PREFIX/lib/cmake/Salts" `
+            "-DSaltsUtils_DIR=$env:SALTS_UTILS_SDK_PREFIX/lib/cmake/SaltsUtils" `
+            -DCMAKE_DISABLE_FIND_PACKAGE_GmSSL=TRUE `
+            -DCMAKE_FIND_USE_PACKAGE_REGISTRY=FALSE `
+            -DCMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY=FALSE
+          if ($LASTEXITCODE -ne 0) { throw "Windows SDK CMake configure failed" }
 
       - name: Qualify generated Service output (verbose on failure)
         env:
           SALTS_ROOT: ${{ env.SALTS_SDK_PREFIX }}
           SALTS_UTILS_ROOT: ${{ env.SALTS_UTILS_SDK_PREFIX }}
-          LD_LIBRARY_PATH: ${{ env.SALTS_UTILS_SDK_PREFIX }}/lib:${{ env.SALTS_SDK_PREFIX }}/lib
-        run: cmake --build build/qualification --target book_databind_service_idl_codegen --verbose
+        run: cmake --build build/qualification --config Release --target book_databind_service_idl_codegen --verbose
+
       - name: Build qualification gates
         env:
           SALTS_ROOT: ${{ env.SALTS_SDK_PREFIX }}
           SALTS_UTILS_ROOT: ${{ env.SALTS_UTILS_SDK_PREFIX }}
-          LD_LIBRARY_PATH: ${{ env.SALTS_UTILS_SDK_PREFIX }}/lib:${{ env.SALTS_SDK_PREFIX }}/lib
-        run: cmake --build build/qualification --parallel
+        run: cmake --build build/qualification --config Release --parallel 2
 
       - name: Run qualification gates
         env:
           SALTS_ROOT: ${{ env.SALTS_SDK_PREFIX }}
           SALTS_UTILS_ROOT: ${{ env.SALTS_UTILS_SDK_PREFIX }}
-          LD_LIBRARY_PATH: ${{ env.SALTS_UTILS_SDK_PREFIX }}/lib:${{ env.SALTS_SDK_PREFIX }}/lib
-        run: ctest --test-dir build/qualification --output-on-failure
+        run: ctest --test-dir build/qualification -C Release --output-on-failure

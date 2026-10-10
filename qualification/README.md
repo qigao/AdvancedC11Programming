@@ -11,9 +11,13 @@ CI intentionally does not pin package versions. The resolver selects the
 highest SemVer **published** GitHub Release for each SDK, including RC prereleases
 (the GitHub `/releases/latest` endpoint would incorrectly skip them). A newer
 RC beats an older stable release; the final release of the same version beats its RC.
-It requires the exact matching `.nupkg` asset, checks published SHA256SUMS when
-present, and restores each `sdk/linux-x64` install tree using `unzip` so the
-installed `salts-idlc` retains its executable bit.
+It requires the exact matching `.nupkg` asset and checks published SHA256SUMS
+when present. The native CI matrix selects **one exact SDK RID per actual host**:
+`linux-x64` on Ubuntu x64, `windows-x64` on Windows x64 and `macos-arm64`
+on macOS ARM64. Runner OS/architecture mismatches fail before restoration;
+cross-RID substituting is forbidden. Linux/macOS extraction uses `unzip` to
+retain the packaged `salts-idlc` executable bit; Windows extracts the real
+`salts-idlc.exe` and provides the SDK DLL directories on the host PATH.
 
 The two SDKs are selected independently, never pinned. Their combined installed
 consumer build is the compatibility gate: neither a legacy SaltsUtils with a newer
@@ -23,7 +27,11 @@ CMake user/system package registries, and qualification verifies that resolved
 package directories remain inside those SDK roots. Build and CTest inherit both
 SDK roots and runtime library paths. Any missing or incompatible newest package
 fails; no downgrade, permission repair, machine-installed package, source-tree
-dependency, or compatibility-target fallback is allowed.
+dependency, or compatibility-target fallback is allowed. All three native
+configures explicitly set `CMAKE_DISABLE_FIND_PACKAGE_GmSSL=TRUE`: the book
+consumes `Salts::DataBind`/`Salts::CFlow`, not `Salts::Crypto`, so a transitive
+build-time GmSSL package dependency is a public SDK regression even if an
+individual CI runner happens to have GmSSL preinstalled.
 
 A failure here means that a public SDK change has made one of the book's
 executable contracts stale. It does not silently rewrite the edition snapshot.

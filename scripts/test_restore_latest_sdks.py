@@ -1,7 +1,9 @@
 """Offline selection tests: no network, package pins, or fallback behavior."""
 import unittest
 
-from restore_latest_sdks import required_checksum, select_release, version_key
+from restore_latest_sdks import (
+    required_checksum, select_release, validate_sdk_rid, version_key
+)
 
 
 def release(tag, package="Salts.Native", *, published="2026-01-01T00:00:00Z",
@@ -31,6 +33,32 @@ class VersionTests(unittest.TestCase):
         rc9 = release("v7.5.0-rc.9")
         rc10 = release("v7.5.0-rc.10")
         self.assertEqual(select_release([rc9, rc10], "Salts.Native")[0], rc10)
+
+    def test_independent_projects_use_latest_rc_without_matching_rc_numbers(self):
+        # Real releases do not progress in lockstep. Never pin, coerce or
+        # downgrade one SDK to match the other's prerelease suffix.
+        salts = [
+            release("v7.5.0-rc.2"),
+            release("v7.5.0-rc.7"),
+            release("v7.4.9"),
+        ]
+        utils = [
+            release("v9.3.0-rc.5", package="SaltsUtils.Native"),
+            release("v9.3.0-rc.4", package="SaltsUtils.Native"),
+            release("v9.2.9", package="SaltsUtils.Native"),
+        ]
+        self.assertEqual(select_release(salts, "Salts.Native")[0]["tag_name"],
+                         "v7.5.0-rc.7")
+        self.assertEqual(select_release(utils, "SaltsUtils.Native")[0]["tag_name"],
+                         "v9.3.0-rc.5")
+
+    def test_latest_release_requires_its_own_exact_project_asset(self):
+        # A correctly named newer SaltsUtils asset cannot satisfy an
+        # independently selected Salts.Native release, even at equal SemVer.
+        incorrect = release("v7.5.0-rc.8", package="SaltsUtils.Native")
+        older = release("v7.5.0-rc.7")
+        with self.assertRaisesRegex(RuntimeError, "expected one exact"):
+            select_release([older, incorrect], "Salts.Native")
 
     def test_draft_is_not_published(self):
         stable = release("v7.4.0")
@@ -70,6 +98,34 @@ class VersionTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "SHA256 entry"):
             required_checksum("a" * 64 + "  some-other-file\n",
                               "Salts.Native.7.5.0.nupkg")
+
+
+
+class RidTests(unittest.TestCase):
+    def test_only_native_host_sdk_matches(self):
+        for rid, host, arch in (
+            ("linux-x64", "linux", "x86_64"),
+            ("windows-x64", "win32", "AMD64"),
+            ("macos-arm64", "darwin", "arm64"),
+        ):
+            with self.subTest(rid=rid):
+                self.assertEqual(validate_sdk_rid(rid, host, arch), rid)
+
+    def test_runner_and_sdk_cannot_cross_architectures(self):
+        for rid, host, arch in (
+            ("macos-arm64", "darwin", "x86_64"),
+            ("windows-x64", "linux", "x86_64"),
+            ("linux-x64", "win32", "AMD64"),
+        ):
+            with self.subTest(rid=rid):
+                with self.assertRaisesRegex(RuntimeError, "SDK|unsupported"):
+                    validate_sdk_rid(rid, host, arch)
+
+    def test_unknown_or_unselected_rid_fails_closed(self):
+        with self.assertRaisesRegex(RuntimeError, "does not match runner"):
+            validate_sdk_rid(None, "linux", "x86_64")
+        with self.assertRaisesRegex(RuntimeError, "unsupported SDK host"):
+            validate_sdk_rid("linux-arm64", "linux", "aarch64")
 
 
 if __name__ == "__main__":
