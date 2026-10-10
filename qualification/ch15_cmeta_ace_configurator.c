@@ -2,7 +2,7 @@
  * ACE Service Configurator: exact typed CMeta Strategy + strict C11 config.
  *
  * The host is owner-affine and address-stable. A published Strategy borrows
- * &host->active; only an explicit live call lease permits using that borrow.
+ * its one-shot lease slot; only that explicitly live lease permits dispatch.
  * Reconfiguration is validate-then-publish, requires no live borrows, and
  * never creates threads, sockets, a plugin loader, or a hidden fallback.
  *
@@ -22,9 +22,11 @@
 #include <string.h>
 
 #define BOOK_ACE_CONFIG_METHODS(X, I) \
-    X(I, FR1, int, apply, stateful, \
+    X(I, FR2, int, apply, stateful, \
       &cmeta_type_int, CMETA_ABI_SCALAR, CMETA_RESULT_VALUE, \
-      (int, value, CMETA_PARAM_IN, &cmeta_type_int, CMETA_ABI_SCALAR))
+      (int, value, CMETA_PARAM_IN, &cmeta_type_int, CMETA_ABI_SCALAR), \
+      (int *, out, CMETA_PARAM_OUT | CMETA_PARAM_BORROWED, \
+       &cmeta_type_int_ptr, CMETA_ABI_OBJECT_POINTER))
 
 CMETA_INTERFACE(book_ace_config_strategy, BOOK_ACE_CONFIG_METHODS);
 
@@ -84,26 +86,44 @@ static int book_permit(const book_lease *lease)
     return SALTS_OK;
 }
 
-static int book_apply_add(void *self, int value)
+/* Exact typed status/out separates legitimate arithmetic values from errors.
+ * Reject invalid pointer, stale borrow, wrong Strategy or signed overflow
+ * before touching caller-owned output.
+ */
+static int book_apply_add(void *self, int value, int *out)
 {
     const book_lease *lease = (const book_lease *)self;
     int rc = book_permit(lease);
+    int operand;
     if (rc != SALTS_OK)
         return rc;
+    if (out == NULL)
+        return SALTS_EINVAL;
     if (lease->host->active.mode != BOOK_MODE_ADD)
         return SALTS_EPROTO;
-    return value + lease->host->active.operand;
+    operand = lease->host->active.operand;
+    if (value > INT_MAX - operand)
+        return SALTS_ERANGE;
+    *out = value + operand;
+    return SALTS_OK;
 }
 
-static int book_apply_scale(void *self, int value)
+static int book_apply_scale(void *self, int value, int *out)
 {
     const book_lease *lease = (const book_lease *)self;
     int rc = book_permit(lease);
+    int operand;
     if (rc != SALTS_OK)
         return rc;
+    if (out == NULL)
+        return SALTS_EINVAL;
     if (lease->host->active.mode != BOOK_MODE_SCALE)
         return SALTS_EPROTO;
-    return value * lease->host->active.operand;
+    operand = lease->host->active.operand;
+    if (value > INT_MAX / operand || value < INT_MIN / operand)
+        return SALTS_ERANGE;
+    *out = value * operand;
+    return SALTS_OK;
 }
 
 CMETA_IMPLEMENTS(book_ace_config_strategy, book_config_add_impl, 0u,
@@ -314,6 +334,7 @@ typedef struct book_foreign_probe {
     book_result result;
     book_result reload_result;
     int direct_call_result;
+    int direct_output;
 } book_foreign_probe;
 
 static void book_foreign_try_acquire(void *user)
@@ -323,7 +344,8 @@ static void book_foreign_try_acquire(void *user)
     probe->reload_result = book_host_reload(
         probe->host, "ace_configurator_scale.cfg");
     probe->direct_call_result =
-        book_ace_config_strategy_apply(&probe->view, 7);
+        book_ace_config_strategy_apply(&probe->view, 7,
+                                       &probe->direct_output);
 }
 
 int main(void)
@@ -339,6 +361,7 @@ int main(void)
     book_foreign_probe worker = {0};
     cmeta_thread_t thread = NULL;
     uint64_t generation;
+    int output = -77;
     const char *const invalid_files[] = {
         "ace_configurator_invalid.cfg",
         "ace_configurator_missing.cfg",
@@ -358,17 +381,26 @@ int main(void)
     BOOK_CHECK(host.open && host.generation == 1u);
 
     BOOK_CHECK(book_host_acquire(&host, &lease, &view) == BOOK_OK);
-    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7) == 10);
+    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7, &output) == SALTS_OK);
+    BOOK_CHECK(output == 10);
+    output = -77;
+    BOOK_CHECK(book_ace_config_strategy_apply(&view, INT_MAX, &output) ==
+               SALTS_ERANGE);
+    BOOK_CHECK(output == -77); /* overflow must fail before writing output */
+    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7, NULL) ==
+               SALTS_EINVAL);
     generation = host.generation;
     BOOK_CHECK(book_host_reload(&host, "ace_configurator_scale.cfg") ==
                BOOK_BUSY);
     BOOK_CHECK(book_host_close(&host) == BOOK_BUSY);
     BOOK_CHECK(host.generation == generation);
-    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7) == 10);
+    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7, &output) == SALTS_OK);
+    BOOK_CHECK(output == 10);
 
     /* A foreign thread cannot obtain a borrowed strategy or a lease. */
     worker.host = &host;
     worker.view = view; /* pass copied Interface, not new ownership */
+    worker.direct_output = -77;
     BOOK_CHECK(cmeta_thread_create(&thread, book_foreign_try_acquire, &worker)
                == SALTS_OK);
     BOOK_CHECK(cmeta_thread_join(&thread) == SALTS_OK);
@@ -376,6 +408,7 @@ int main(void)
     BOOK_CHECK(worker.result == BOOK_FOREIGN);
     BOOK_CHECK(worker.reload_result == BOOK_FOREIGN);
     BOOK_CHECK(worker.direct_call_result == SALTS_EPERM);
+    BOOK_CHECK(worker.direct_output == -77);
     BOOK_CHECK(!worker.lease.live && host.leases == 1u);
 
     duplicate = lease; /* an ordinary struct copy cannot duplicate authority */
@@ -384,15 +417,24 @@ int main(void)
     BOOK_CHECK(book_host_release(&lease) == BOOK_OK);
     BOOK_CHECK(book_host_release(&lease) == BOOK_STALE);
     BOOK_CHECK(host.leases == 0u);
-    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7) == SALTS_ESHUTDOWN);
+    output = -77;
+    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7, &output) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(output == -77);
 
     /* An unrelated live lease must never revive the old copied Interface. */
     BOOK_CHECK(book_host_acquire(&host, &overlapping, &current) == BOOK_OK);
-    BOOK_CHECK(book_ace_config_strategy_apply(&current, 7) == 10);
-    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7) == SALTS_ESHUTDOWN);
+    BOOK_CHECK(book_ace_config_strategy_apply(&current, 7, &output) == SALTS_OK);
+    BOOK_CHECK(output == 10);
+    output = -77;
+    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7, &output) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(output == -77);
     BOOK_CHECK(book_host_acquire(&host, &lease, &view) == BOOK_STALE);
     BOOK_CHECK(book_host_release(&overlapping) == BOOK_OK);
-    BOOK_CHECK(book_ace_config_strategy_apply(&current, 7) == SALTS_ESHUTDOWN);
+    BOOK_CHECK(book_ace_config_strategy_apply(&current, 7, &output) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(output == -77);
 
     for (size_t i = 0u; i < sizeof(invalid_files)/sizeof(invalid_files[0]); ++i) {
         BOOK_CHECK(book_host_reload(&host, invalid_files[i]) == BOOK_INVALID);
@@ -401,10 +443,19 @@ int main(void)
     BOOK_CHECK(book_host_reload(&host, "ace_configurator_scale.cfg") == BOOK_OK);
     BOOK_CHECK(host.generation == generation + 1u);
     BOOK_CHECK(book_host_acquire(&host, &after_reload, &current) == BOOK_OK);
-    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7) == SALTS_ESHUTDOWN);
-    BOOK_CHECK(book_ace_config_strategy_apply(&current, 7) == 14);
+    BOOK_CHECK(book_ace_config_strategy_apply(&view, 7, &output) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(output == -77);
+    BOOK_CHECK(book_ace_config_strategy_apply(&current, 7, &output) == SALTS_OK);
+    BOOK_CHECK(output == 14);
+    output = -77;
+    BOOK_CHECK(book_ace_config_strategy_apply(&current, INT_MAX, &output) ==
+               SALTS_ERANGE);
+    BOOK_CHECK(output == -77); /* multiplication cannot overflow silently */
     BOOK_CHECK(book_host_release(&after_reload) == BOOK_OK);
-    BOOK_CHECK(book_ace_config_strategy_apply(&current, 7) == SALTS_ESHUTDOWN);
+    BOOK_CHECK(book_ace_config_strategy_apply(&current, 7, &output) ==
+               SALTS_ESHUTDOWN);
+    BOOK_CHECK(output == -77);
 
     BOOK_CHECK(book_host_close(&host) == BOOK_OK);
     BOOK_CHECK(!host.open && host.leases == 0u);
