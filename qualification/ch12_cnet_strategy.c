@@ -11,6 +11,7 @@
 #include <cmeta/interface.h>
 #include <salts/error_codes.h>
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -155,8 +156,7 @@ static int qualify_remote_destination(void)
     compact[kept.index].eligible = false;
     BOOK_CHECK(cnet_destination_choose(&decision, &kept) == SALTS_ENOBUFS);
     BOOK_CHECK(kept.index == SIZE_MAX);
-    compact[kept.index == SIZE_MAX ? 0u : kept.index].eligible = true;
-    /* The assignment above restores a valid hint; the next gate uses expiry. */
+    /* Failed selection still never authorizes a different remote peer. */
     decision.now_ms = decision.expires_at_ms;
     BOOK_CHECK(cnet_destination_choose(&decision, &kept) == SALTS_ETIMEDOUT);
     BOOK_CHECK(kept.index == SIZE_MAX);
