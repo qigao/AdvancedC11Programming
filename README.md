@@ -19,7 +19,7 @@ Readers should understand pointers, structs, function pointers, object lifetime,
 - Expand a call adapter into ordinary C and understand binding, type erasure, and their storage and lifetime assumptions.
 - Compose typed graphs and Streams, using pseudocode, invariants, and proofs to check transformations.
 - Apply these techniques in DataBind, CFlow, and CMeta Plugin to handle contract binding, backpressure, cancellation, cleanup, and ABI boundaries.
-- Use **CMeta-based ACE patterns** for typed Strategy/Interceptor, Platform-backed Scoped Locking, and optional CFlow Active Object, while keeping CNet/NativeIO in charge of Reactor/Proactor and SG networking. Two distinct installed C11 examples now compare Reactor-style Acceptor-Connector dispatch with the Proactor SG completion/ownership path. See [Chapter 3](./en/ch-03.md), [Chapter 10](./en/ch-09.md), [Chapter 12](./en/ch-11.md), and the [Chapter 15 decision map](./en/ch-15.md).
+- Use **CMeta-based ACE patterns** for typed Strategy/Interceptor, Platform-backed Scoped Locking, and optional CFlow Active Object, while keeping CNet/NativeIO in charge of Reactor/Proactor and SG networking. Two distinct installed C11 examples compare Reactor-style Acceptor-Connector dispatch with the Proactor SG completion/ownership path. A further C11 Service Configurator composes independent server Owner Placement and client Destination Strategy using actual installed CNet APIs. See [Chapter 3](./en/ch-03.md), [Chapter 10](./en/ch-09.md), [Chapter 12](./en/ch-11.md), and the [Chapter 15 decision map](./en/ch-15.md).
 
 ## An Example: Start with an Ordinary C Call
 

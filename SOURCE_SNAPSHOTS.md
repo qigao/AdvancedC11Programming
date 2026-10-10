@@ -73,6 +73,13 @@ rewriting those earlier implementation claims or using source-tree dependencies.
   lifecycle. Upstream CMeta synchronization, Leader/Followers, and CFlow
   Half-Sync/Pipes conformance tests are source evidence, not a claim that
   the book has reimplemented every ACE pattern.
+- `qualification/ch15_cmeta_ace_cnet_policy_config.c` adds a subsequent
+  **installed public CNet Strategy consumer** composing two separate CMeta
+  Interfaces: local SG final Owner Placement and remote client Destination
+  selection. It calls the real released CNet selectors with bounded config
+  and generation-safe application leases, while explicitly proving that
+  successful selection is not physical admission, handoff, dial or retry.
+  This is not an upstream generic ACE Configurator implementation.
 - `qualification/ch15_cmeta_ace_configurator.c` adds an application-owned
   Service Configurator with a strict, real configuration file, exact CMeta
   Strategy contract and quiescent, generation-safe publication. This is an
