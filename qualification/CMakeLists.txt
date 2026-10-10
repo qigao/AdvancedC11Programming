@@ -458,6 +458,21 @@ target_link_libraries(
   PRIVATE
     Salts::CFlow)
 
+# ACE Monitor Object: real Platform mutex/condition and Thread-Specific
+# Storage, exposed through a fully reflected borrowed CMeta Interface.
+# No Actor mailbox, second scheduler or undisclosed worker runtime.
+book_qualification_gate(
+  book_ch10_cmeta_ace_monitor
+  ch10_cmeta_ace_monitor.c)
+target_link_libraries(
+  book_ch10_cmeta_ace_monitor
+  PRIVATE
+    Salts::CMeta
+    Salts::Platform)
+set_tests_properties(book_ch10_cmeta_ace_monitor PROPERTIES
+  TIMEOUT 25
+  LABELS "cmeta;ace;monitor;thread-local;installed")
+
 book_qualification_gate(
   book_ch10_executor_settlement
   ch10_executor_settlement.c)
