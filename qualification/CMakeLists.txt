@@ -358,10 +358,14 @@ target_link_libraries(
   PRIVATE
     Salts::CFlow)
 
+# Optional/default overlay is not a CMeta VALUE execution record in
+# SaltsUtils 4.3 Contract-only Native. This case deliberately tests the
+# explicitly selected Binary schema path; it must never be an implicit fallback.
 salts_idl_target(
   TARGET book_databind_service
   IDL "${CMAKE_CURRENT_SOURCE_DIR}/ch08_databind_service.schema"
   ARTIFACT_NAME "book_service"
+  BINARY_CODEC
   ARTIFACTS NATIVE)
 
 target_sources(
