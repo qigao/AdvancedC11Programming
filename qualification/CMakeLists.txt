@@ -470,6 +470,22 @@ target_link_libraries(
     Salts::CNet
     Salts::CMeta)
 
+# Real installed-SDK dual-SG-Owner TCP transport progression.
+# One NativeIO host observe per shard; final Owner performs Manager adoption.
+book_qualification_gate(
+  book_ch12_cnet_sg_handoff
+  ch12_cnet_sg_handoff.c)
+target_link_libraries(
+  book_ch12_cnet_sg_handoff
+  PRIVATE
+    Salts::NativeIO
+    Salts::CNet
+    Salts::CMeta)
+set_tests_properties(
+  book_ch12_cnet_sg_handoff PROPERTIES
+    TIMEOUT 25
+    LABELS "cnet;sg;handoff;installed;network")
+
 book_qualification_gate(
   book_ch13_parse_u64
   ch13_parse_u64.c)
