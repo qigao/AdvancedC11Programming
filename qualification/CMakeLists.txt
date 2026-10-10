@@ -531,6 +531,21 @@ target_link_libraries(
     Salts::CNet
     Salts::CMeta)
 
+# Owner-local client Manager + Pool admission after an actual loopback
+# application READY exchange. Real protocol slot leases survive CNet terminal;
+# Recovery/Retry are explicit, never an implicit request replay.
+book_qualification_gate(
+  book_ch12_cnet_pool_recovery
+  ch12_cnet_pool_recovery.c)
+target_link_libraries(
+  book_ch12_cnet_pool_recovery
+  PRIVATE
+    Salts::CNet
+    Salts::Platform)
+set_tests_properties(book_ch12_cnet_pool_recovery PROPERTIES
+  TIMEOUT 25
+  LABELS "cnet;client;pool;protocol-ready;recovery;installed;network")
+
 # Real installed-SDK dual-SG-Owner TCP transport progression.
 # One NativeIO host observe per shard; final Owner performs Manager adoption.
 book_qualification_gate(

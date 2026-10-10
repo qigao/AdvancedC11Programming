@@ -9,7 +9,7 @@ from verify_ctest_results import BASELINE_TESTS, VerificationError, verify_repor
 class BookCTestAdmissionTests(unittest.TestCase):
     def setUp(self):
         self.names = sorted(BASELINE_TESTS)
-        self.assertEqual(len(self.names), 35)
+        self.assertEqual(len(self.names), 36)
 
     def suite(self, names=None):
         names = self.names if names is None else names
@@ -26,14 +26,14 @@ class BookCTestAdmissionTests(unittest.TestCase):
             })
         return suite
 
-    def test_all_35_executed_passed(self):
-        self.assertEqual(verify_testsuite(self.suite()), 35)
+    def test_all_36_executed_passed(self):
+        self.assertEqual(verify_testsuite(self.suite()), 36)
 
     def test_more_executed_tests_allowed(self):
-        self.assertEqual(verify_testsuite(self.suite(self.names + ["book_future_gate"])), 36)
+        self.assertEqual(verify_testsuite(self.suite(self.names + ["book_future_gate"])), 37)
 
     def test_one_removed_gate_rejected(self):
-        with self.assertRaisesRegex(VerificationError, "minimum 35"):
+        with self.assertRaisesRegex(VerificationError, "minimum 36"):
             verify_testsuite(self.suite(self.names[:-1]))
 
     def test_missing_baseline_even_with_extra_test_rejected(self):
@@ -46,8 +46,8 @@ class BookCTestAdmissionTests(unittest.TestCase):
 
     def test_wrong_reported_count_rejected(self):
         suite = self.suite()
-        suite.set("tests", "34")
-        with self.assertRaisesRegex(VerificationError, "reports 34 tests"):
+        suite.set("tests", "35")
+        with self.assertRaisesRegex(VerificationError, "reports 35 tests"):
             verify_testsuite(suite)
 
     def test_skipped_summary_rejected(self):
@@ -106,7 +106,7 @@ class BookCTestAdmissionTests(unittest.TestCase):
 
     def test_valid_xml_roundtrip(self):
         data = io.BytesIO(ET.tostring(self.suite(), encoding="utf-8"))
-        self.assertEqual(verify_report(data), 35)
+        self.assertEqual(verify_report(data), 36)
 
     def test_malformed_xml_rejected(self):
         with self.assertRaises(ET.ParseError):

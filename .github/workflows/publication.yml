@@ -139,5 +139,5 @@ jobs:
           SALTS_UTILS_ROOT: ${{ env.SALTS_UTILS_SDK_PREFIX }}
         run: ctest --test-dir build/qualification -C Release --output-on-failure --output-junit ctest-results.xml
 
-      - name: Verify executed CTest inventory (35 baseline, no skips)
+      - name: Verify executed CTest inventory (36 baseline, no skips)
         run: python scripts/verify_ctest_results.py build/qualification/ctest-results.xml

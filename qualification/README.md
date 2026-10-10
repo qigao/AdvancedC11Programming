@@ -37,12 +37,12 @@ A failure here means that a public SDK change has made one of the book's
 executable contracts stale. It does not silently rewrite the edition snapshot.
 
 Every native runner also exports an actual CTest JUnit report. The shared
-`scripts/verify_ctest_results.py` checks that all **35 established executable
+`scripts/verify_ctest_results.py` checks that all **36 established executable
 gates** still appear exactly once and genuinely ran/passed; missing, disabled,
 skipped, failed, duplicated or malformed reports fail CI. Future additive
-tests are welcome; 35 is a minimum, not an artificial ceiling. Offline unit
+tests are welcome; 36 is a minimum, not an artificial ceiling. Offline unit
 tests exercise the verifier on all three hosts before SDK restoration. This
-guards against a misleading green `34/34` or skip when CTest's exit code
+guards against a misleading green `35/35` or skip when CTest's exit code
 would otherwise be successful. The full native execution remains mandatory;
 this admission check is not a replacement for CTest, IDL codegen or
 installed-package verification.
@@ -77,6 +77,7 @@ Current gates:
 - `ch11_machine_staged_commit.c`: a failed Machine action returns ERROR while preserving the original state id/value, while a successful staged action commits once to a terminal state and later event admission is rejected without re-running the action;
 - `ch12_ace_reactor_dispatch.c`: real installed CNet TCP Acceptor-Connector and caller-driven Reactor-style readiness/poll dispatch through a reflected CMeta state Handler; exact ABI, invalid-admission no-callback, single connected/terminal per peer, Owner-affinity, provider lifetime and listener close independence. CNet internally observes NativeIO completion, so this is not a separately built pure Reactor backend;
 - `ch12_cnet_strategy.c`: independent installed `Salts::CNet` + CMeta ACE-style typed Strategy consumer checks server fixed Owner admission versus client stable remote endpoint selection, strict-key failure without rerouting, remote set generation stability, expiration and logical request retry denied by default; no Actor, socket or hidden worker;
+- `ch12_cnet_pool_recovery.c`: **new real client-owned TCP + Manager + Client Pool admission** against the latest installed SDK. The peer sends an actual small `RDY!` application marker after TCP CONNECTED; no Pool acquire succeeds before all bytes arrive and application publishes explicit protocol READY. A full owner/remote/authority/trust/protocol/session key admits two generation-safe leases backed by application-owned, tokenized two-slot protocol `reserve/release` callbacks, rejects incompatible identity and a third lease, then closes the real transport. Pool terminal requires Manager retirement; active leases survive terminal and prevent pool destroy until settled exactly once. Real `cnet_reconnect_*` controls only subsequent transport-attempt/backoff eligibility; `cnet_retry_evaluate` denies logical DATA replay by default, for one-attempt contracts, security failures or missing owned/idempotent/protocol evidence. The toy `RDY!` marker does not claim TLS authorization, remote multiplexing, real reconnect or exactly-once service execution;
 - `ch12_cnet_sg_handoff.c`: **live two-shard NativeIO SG integration across both policy axes**: first a real installed CNet Client Destination Policy refuses an ineligible explicit stable remote ID (no reroute or dial), then selects ID 101 before one genuine loopback TCP dial; server strict-key Owner Placement refuses unavailable Owner 1 (no premature detached accept) before a real bounded transfer to final Owner 1. Each shard owns exactly one host lease/observe authority; Manager adopt, actual bidirectional payloads, owner-affine callbacks, terminal recycling, credit-once cleanup and quiescent SG shutdown remain mandatory. Candidate selection is neither capacity reservation, protocol READY nor logical retry; no added Actor, Reactor, stress benchmark or device qualification.
 - `ch03_cmeta_ace_patterns.c`: installed strict-C11 Salts CMeta ACE Strategy with reflected exact FunctionAbi, bounded Interceptor hook order/unwind (`ABTba` / `AB21`), four real Platform threads with borrowed scoped lock policy and exactly 400 synchronized updates, and a NativeIO Proactor completion token settled once; does not implement a second runtime or hold a provider/Plugin implicitly;
 - `ch12_cmeta_ace_active_object.c`: installed CMeta typed Port/Strategy + real CFlow Actor/Machine/Scheduler executes one admitted application event (`7 -> 107`), refuses post-stop send and yields STALE after actor destroy while producer ref is still retained; CFlow, not CMeta, owns queue and lifecycle;
