@@ -516,6 +516,30 @@ set_tests_properties(book_ch12_cmeta_ace_active_object PROPERTIES
   LABELS "cmeta;ace;active-object;cflow;installed"
   TIMEOUT 15)
 
+# An application Service Configurator chooses a CMeta typed Strategy from
+# a real strictly validated file, and publishes only with no live call leases.
+# No invented general hot-reload framework or hidden runtime replacement.
+foreach(fixture IN ITEMS
+    ace_configurator_add.cfg
+    ace_configurator_scale.cfg
+    ace_configurator_invalid.cfg)
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/${fixture}"
+    "${CMAKE_CURRENT_BINARY_DIR}/${fixture}"
+    COPYONLY)
+endforeach()
+book_qualification_gate(
+  book_ch15_cmeta_ace_configurator
+  ch15_cmeta_ace_configurator.c)
+target_link_libraries(
+  book_ch15_cmeta_ace_configurator
+  PRIVATE
+    Salts::CMeta
+    Salts::Platform)
+set_tests_properties(book_ch15_cmeta_ace_configurator PROPERTIES
+  LABELS "cmeta;ace;configurator;control-plane;installed"
+  TIMEOUT 15)
+
 book_qualification_gate(
   book_ch13_parse_u64
   ch13_parse_u64.c)
