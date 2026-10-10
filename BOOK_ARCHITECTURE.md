@@ -59,6 +59,17 @@ CMeta 主线包括有限宏展开、编译期类型约束、泛型与类型关�
 
 第十二章还通过安装版 `Salts::NativeIO` + `Salts::CNet` 验证两个真实 SG Owner 的 TCP handoff：一次单独的 socket 转移、双向实际负载、owner-affine 回调与 terminal/Manager 回收。这是对纯 Strategy API gate 的运行时补充，不能被解释为压力测试或 Actor Lean 证明。
 
+## 贯穿章节：CMeta 版 ACE 模式的设计与应用
+
+本书不另设一套继承式 ACE Runtime，而把设计模式的**合同与执行者**按层解释和验证：
+
+- 第三章：CMeta `CMETA_INTERFACE`、`FunctionDesc/FunctionAbi` 和 `CMETA_INTERCEPTOR_TYPE` 描述 Strategy、Adapter、Interceptor；生成 exact C 调用、检查 hook 顺序、拒绝路径与 provider 借用。
+- 第十章：`cmeta_ace_lockable` 与 `CMETA_ACE_SYNCHRONIZED` 只生成有类型的同步入口；Platform 才拥有 mutex、condition、TLS 与 Leader/Followers 的线程交接。Monitor Object 不等于 CMeta 自带一把锁。
+- 第十二章：应用真正需要独立邮箱时才组合 CMeta typed Port/Strategy 与 CFlow Active Object；CNet Acceptor-Connector、SG Owner 和 NativeIO Reactor/Proactor 不因此复制执行引擎。Half-Sync/Half-Async 和 Pipes/Filters 的有界容量、需求额度仍归 CFlow。
+- 第十五章：给出按需求选择 ACE 模式的决策表，明确 Service Configurator 仅为应用控制面建议，不冒充已发布通用机制。
+
+对后续 Salts 2.3 的接口只作**增补验证**，不反推它们已存在于固定版源码快照。安装版 C11 `ch03_cmeta_ace_patterns.c` 和 `ch12_cmeta_ace_active_object.c` 通过真实执行检查精确 Strategy/Interceptor 顺序、Scoped Locking、多线程递增、NativeIO 一次性完成、Actor STOPPED/STALE；这仍不是全部 ACE 模式、性能或多平台发布保证。任何高级模式都必须最终呈现为可检查的普通 C 数据结构、调用和所有权责任。
+
 第十三章将模型假设放回真实工具链中检查。保留 exact ABI epoch、无静默回退、显式所有权与有界资源等约束；同时区分已经完成的快照证据和仍需组合构建验证的边界。
 
 ## 收束：技巧取舍与综合应用

@@ -294,6 +294,21 @@ target_link_libraries(
   PRIVATE
     Salts::CMeta)
 
+# ACE design is an installed public CMeta contract: borrowed typed
+# Strategy/Interceptor, Platform-owned synchronization and NativeIO token.
+book_qualification_gate(
+  book_ch03_cmeta_ace_patterns
+  ch03_cmeta_ace_patterns.c)
+target_link_libraries(
+  book_ch03_cmeta_ace_patterns
+  PRIVATE
+    Salts::CMeta
+    Salts::Platform
+    Salts::NativeIO)
+set_tests_properties(book_ch03_cmeta_ace_patterns PROPERTIES
+  LABELS "cmeta;ace;strategy;interceptor;scoped-lock;installed"
+  TIMEOUT 25)
+
 book_qualification_gate(
   book_ch04_graph_admission
   ch04_graph_admission.c)
@@ -485,6 +500,21 @@ set_tests_properties(
   book_ch12_cnet_sg_handoff PROPERTIES
     TIMEOUT 25
     LABELS "cnet;sg;handoff;installed;network")
+
+# Optional application Active Object: CMeta ports remain borrowed,
+# CFlow alone owns Machine/Actor mailbox, task scheduling and stale producer refs.
+book_qualification_gate(
+  book_ch12_cmeta_ace_active_object
+  ch12_cmeta_ace_active_object.c)
+target_link_libraries(
+  book_ch12_cmeta_ace_active_object
+  PRIVATE
+    Salts::CFlow
+    Salts::CMeta
+    Salts::Platform)
+set_tests_properties(book_ch12_cmeta_ace_active_object PROPERTIES
+  LABELS "cmeta;ace;active-object;cflow;installed"
+  TIMEOUT 15)
 
 book_qualification_gate(
   book_ch13_parse_u64

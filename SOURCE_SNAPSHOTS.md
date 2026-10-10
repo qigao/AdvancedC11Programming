@@ -58,6 +58,21 @@ rewriting those earlier implementation claims or using source-tree dependencies.
   Owner Manager adoption -> two-way transfer -> terminal/recycle -> credit return,
   using only the latest installed public SDK. It does not change the source
   snapshot recorded above or pin the newest package to its example reference.
+- The published 2.3 ACE pattern API reference adds `cmeta/interface.h`,
+  `cmeta/ace_interceptor.h` and `cmeta/ace_synchronization.h` for typed
+  Strategy, Interceptor and borrowed Lockable/Scoped Locking. `NativeIO` owns
+  the `salts/native_io_ace_token.h` one-shot completion identity, Platform
+  owns real mutexes/threads, and `CFlow` owns application Active Object
+  lifecycle. Upstream CMeta synchronization, Leader/Followers, and CFlow
+  Half-Sync/Pipes conformance tests are source evidence, not a claim that
+  the book has reimplemented every ACE pattern.
+- `qualification/ch03_cmeta_ace_patterns.c` and
+  `qualification/ch12_cmeta_ace_active_object.c` are independently built
+  **latest-published-SDK C11 consumers** exercising those selected public
+  APIs, their rejection/settlement outcomes and owner boundaries. This
+  expands compatibility evidence only; it does not move or overwrite the
+  edition implementation snapshots.
+
 - The pure-policy and live-TCP gates jointly establish selected API admission
   and one real lifecycle path. They do **not** establish all SG execution races,
   cross-owner handoff under load, sanitizer results, device runtime behavior,
