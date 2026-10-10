@@ -73,6 +73,14 @@ rewriting those earlier implementation claims or using source-tree dependencies.
   lifecycle. Upstream CMeta synchronization, Leader/Followers, and CFlow
   Half-Sync/Pipes conformance tests are source evidence, not a claim that
   the book has reimplemented every ACE pattern.
+- `qualification/ch10_cmeta_ace_leader_followers.c` adds a standalone
+  **later published SDK** C11 application of genuine Platform Worker threads,
+  mutex/condition and reflected CMeta CPU event callback. Its bounded
+  copied-value event source elects the next Leader before executing a held
+  callback and verifies a successor settles a separate event concurrently,
+  with accepted-event conservation and join-before-destroy. It does NOT
+  add a generic installed Leader/Followers runtime, duplicate SG NativeIO
+  observation, or change the edition-source snapshot.
 - `qualification/ch10_cmeta_ace_monitor.c` independently qualifies later
   installed CMeta ACE Monitor Object using the public Platform mutex,
   condition and native worker threads, exact reflected typed put/take/close
