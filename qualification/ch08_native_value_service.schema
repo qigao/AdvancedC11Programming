@@ -1,0 +1,14 @@
+schema BookNative [version(1)];
+
+message AddRequest {
+  uint32 left;
+  uint32 scale;
+}
+
+message AddResponse {
+  uint32 sum;
+}
+
+service Calc {
+  Add: AddRequest -> AddResponse;
+}

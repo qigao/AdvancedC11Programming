@@ -12,6 +12,30 @@ set(CMAKE_C_EXTENSIONS OFF)
 find_package(Salts CONFIG REQUIRED)
 find_package(SaltsUtils CONFIG REQUIRED)
 
+function(book_require_restored_package_dir package_name root_env config_subdir)
+  if(NOT DEFINED ENV{${root_env}} OR NOT IS_DIRECTORY "$ENV{${root_env}}")
+    message(FATAL_ERROR "${root_env} must name the restored SDK")
+  endif()
+
+  file(REAL_PATH "$ENV{${root_env}}/${config_subdir}" expected_dir)
+  file(REAL_PATH "${${package_name}_DIR}" actual_dir)
+
+  if(NOT actual_dir STREQUAL expected_dir)
+    message(FATAL_ERROR
+      "${package_name} resolved outside restored SDK: "
+      "expected=${expected_dir} actual=${actual_dir}")
+  endif()
+endfunction()
+
+book_require_restored_package_dir(
+  Salts
+  SALTS_ROOT
+  "lib/cmake/Salts")
+book_require_restored_package_dir(
+  SaltsUtils
+  SALTS_UTILS_ROOT
+  "lib/cmake/SaltsUtils")
+
 set(CMAKE_REQUIRED_LIBRARIES Salts::CMeta)
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
   set(CMAKE_REQUIRED_FLAGS "-Wall -Wextra -Werror -pedantic")
@@ -333,6 +357,67 @@ target_link_libraries(
   book_ch06_authorized_rewrite
   PRIVATE
     Salts::CFlow)
+
+# SaltsUtils 4.3 Contract-only Native Service: plain CMeta VALUE records,
+# exact FunctionDesc/NativeExecution and caller-owned binding metadata.
+# No BINARY_CODEC, legacy *_native.c or implicit format admission.
+salts_idl_target(
+  TARGET book_native_value_service
+  IDL "${CMAKE_CURRENT_SOURCE_DIR}/ch08_native_value_service.schema"
+  ARTIFACT_NAME "book_value"
+  ARTIFACTS NATIVE)
+
+target_sources(
+  ${book_native_value_service_NATIVE_TARGET}
+  PRIVATE
+    ch08_native_value_service_business.c)
+
+book_qualification_gate(
+  book_ch08_native_value_service
+  ch08_native_value_service.c)
+target_link_libraries(
+  book_ch08_native_value_service
+  PRIVATE
+    Salts::DataBind
+    ${book_native_value_service_NATIVE_TARGET})
+target_include_directories(
+  book_ch08_native_value_service
+  PRIVATE
+    "${book_native_value_service_GENERATED_DIR}")
+add_dependencies(
+  book_ch08_native_value_service
+  book_native_value_service_idl_codegen)
+
+# Optional/default overlay is not a CMeta VALUE execution record in
+# SaltsUtils 4.3 Contract-only Native. This case deliberately tests the
+# explicitly selected Binary schema path; it must never be an implicit fallback.
+salts_idl_target(
+  TARGET book_databind_service
+  IDL "${CMAKE_CURRENT_SOURCE_DIR}/ch08_databind_service.schema"
+  ARTIFACT_NAME "book_service"
+  BINARY_CODEC
+  ARTIFACTS NATIVE)
+
+target_sources(
+  ${book_databind_service_NATIVE_TARGET}
+  PRIVATE
+    ch08_databind_service_business.c)
+
+book_qualification_gate(
+  book_ch08_databind_binding_plan
+  ch08_databind_binding_plan.c)
+target_link_libraries(
+  book_ch08_databind_binding_plan
+  PRIVATE
+    Salts::DataBind
+    ${book_databind_service_NATIVE_TARGET})
+target_include_directories(
+  book_ch08_databind_binding_plan
+  PRIVATE
+    "${book_databind_service_GENERATED_DIR}")
+add_dependencies(
+  book_ch08_databind_binding_plan
+  book_databind_service_idl_codegen)
 
 book_qualification_gate(
   book_ch08_databind_public_sdk
