@@ -3,7 +3,7 @@
 
 CTest success alone does not ensure that a test was not deleted, disabled, or
 skipped.  This checks the actual CTest JUnit results on each native SDK host.
-Additional future book gates are allowed; the established 35 are mandatory.
+Additional future book gates are allowed; the established 36 are mandatory.
 """
 from collections import Counter
 from pathlib import Path
@@ -11,7 +11,7 @@ import sys
 import xml.etree.ElementTree as ET
 
 
-MIN_EXECUTED_TESTS = 35
+MIN_EXECUTED_TESTS = 36
 BASELINE_TESTS = frozenset({
     "book_ch01_compiler_skills",
     "book_ch01_cmeta_pp",
@@ -42,6 +42,7 @@ BASELINE_TESTS = frozenset({
     "book_ch11_machine_staged_commit",
     "book_ch12_ace_reactor_dispatch",
     "book_ch12_cnet_strategy",
+    "book_ch12_cnet_pool_recovery",
     "book_ch12_cnet_sg_handoff",
     "book_ch12_cmeta_ace_active_object",
     "book_ch15_cmeta_ace_configurator",
@@ -71,7 +72,7 @@ def _integer_attribute(element, name):
 def verify_testsuite(root):
     """Return the executed count, or raise on any missing or nonpassing gate."""
     if len(BASELINE_TESTS) != MIN_EXECUTED_TESTS:
-        raise VerificationError("book's 35-test baseline roster was modified")
+        raise VerificationError("book's 36-test baseline roster was modified")
 
     if root.tag != "testsuite":
         raise VerificationError(f"expected CTest <testsuite>, got <{root.tag}>")
@@ -130,7 +131,7 @@ def main(argv=None):
     except (OSError, ET.ParseError, VerificationError) as exc:
         print(f"book installed-SDK CTest admission FAILED: {exc}", file=sys.stderr)
         return 1
-    print(f"book installed-SDK CTest admission PASS: {count} executed/passed; all 35 baseline tests present")
+    print(f"book installed-SDK CTest admission PASS: {count} executed/passed; all 36 baseline tests present")
     return 0
 
 
