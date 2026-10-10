@@ -77,13 +77,20 @@ rewriting those earlier implementation claims or using source-tree dependencies.
   **installed public CNet Strategy consumer** composing two separate CMeta
   Interfaces: local SG final Owner Placement and remote client Destination
   selection. It calls the real released CNet selectors with bounded config
-  and generation-safe application leases, while explicitly proving that
-  successful selection is not physical admission, handoff, dial or retry.
+  and one-shot, generation-safe application leases. Both exact reflected
+  Interface selves point to the same caller-owned live lease slot; a retired
+  Interface cannot regain authority when another new lease is acquired. This
+  separately proves that successful selection is not physical admission,
+  handoff, dial or retry.
   This is not an upstream generic ACE Configurator implementation.
 - `qualification/ch15_cmeta_ace_configurator.c` adds an application-owned
   Service Configurator with a strict, real configuration file, exact CMeta
-  Strategy contract and quiescent, generation-safe publication. This is an
-  **illustrative application**, not a generic ACE or DataBind hot-reload runtime.
+  Strategy contract and quiescent, generation-safe publication. The CMeta
+  `self` borrows a caller-owned **nonreused one-shot call lease**, never an
+  unchecked host pointer. The slot stays live as storage while retired
+  Interfaces are inspected, and dispatch refuses stale calls even during an
+  unrelated active lease. This is an **illustrative application**, not a generic
+  ACE or DataBind hot-reload runtime.
 - `qualification/ch03_cmeta_ace_patterns.c` and
   `qualification/ch12_cmeta_ace_active_object.c` are independently built
   **latest-published-SDK C11 consumers** exercising those selected public
