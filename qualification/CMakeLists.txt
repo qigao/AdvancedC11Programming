@@ -358,6 +358,36 @@ target_link_libraries(
   PRIVATE
     Salts::CFlow)
 
+# SaltsUtils 4.3 Contract-only Native Service: plain CMeta VALUE records,
+# exact FunctionDesc/NativeExecution and caller-owned binding metadata.
+# No BINARY_CODEC, legacy *_native.c or implicit format admission.
+salts_idl_target(
+  TARGET book_native_value_service
+  IDL "${CMAKE_CURRENT_SOURCE_DIR}/ch08_native_value_service.schema"
+  ARTIFACT_NAME "book_value"
+  ARTIFACTS NATIVE)
+
+target_sources(
+  ${book_native_value_service_NATIVE_TARGET}
+  PRIVATE
+    ch08_native_value_service_business.c)
+
+book_qualification_gate(
+  book_ch08_native_value_service
+  ch08_native_value_service.c)
+target_link_libraries(
+  book_ch08_native_value_service
+  PRIVATE
+    Salts::DataBind
+    ${book_native_value_service_NATIVE_TARGET})
+target_include_directories(
+  book_ch08_native_value_service
+  PRIVATE
+    "${book_native_value_service_GENERATED_DIR}")
+add_dependencies(
+  book_ch08_native_value_service
+  book_native_value_service_idl_codegen)
+
 # Optional/default overlay is not a CMeta VALUE execution record in
 # SaltsUtils 4.3 Contract-only Native. This case deliberately tests the
 # explicitly selected Binary schema path; it must never be an implicit fallback.
