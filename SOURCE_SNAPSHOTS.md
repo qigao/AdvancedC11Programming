@@ -53,10 +53,15 @@ rewriting those earlier implementation claims or using source-tree dependencies.
   post-edition API admission/ownership semantics. The gate resolves the
   **newest published Salts.Native SDK**, including prereleases; the source tag is
   provenance for the explanation, **not a consumer version pin**.
-- Passing installed-policy tests is evidence for these API calls and their
-  selected failure modes only. It does **not** prove CNet's SG execution races,
-  cross-owner handoff under load, device runtime behavior, Actor/SG equivalence,
-  or performance.
+- The separate `qualification/ch12_cnet_sg_handoff.c` gate exercises one
+  **real two-SG-shard** loopback TCP accept -> detached bounded handoff -> final
+  Owner Manager adoption -> two-way transfer -> terminal/recycle -> credit return,
+  using only the latest installed public SDK. It does not change the source
+  snapshot recorded above or pin the newest package to its example reference.
+- The pure-policy and live-TCP gates jointly establish selected API admission
+  and one real lifecycle path. They do **not** establish all SG execution races,
+  cross-owner handoff under load, sanitizer results, device runtime behavior,
+  Actor/SG equivalence, or performance.
 
 ## CHTTP
 
