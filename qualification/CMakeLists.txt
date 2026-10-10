@@ -567,7 +567,8 @@ foreach(fixture IN ITEMS
     ace_cnet_policy_mixed.cfg
     ace_cnet_policy_rr.cfg
     ace_cnet_policy_invalid.cfg
-    ace_cnet_policy_missing.cfg)
+    ace_cnet_policy_missing.cfg
+    ace_cnet_policy_unknown.cfg)
   configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/${fixture}"
     "${CMAKE_CURRENT_BINARY_DIR}/${fixture}"
