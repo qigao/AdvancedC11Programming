@@ -282,12 +282,15 @@ typedef struct book_foreign_probe {
     book_lease lease;
     book_ace_config_strategy view;
     book_result result;
+    book_result reload_result;
 } book_foreign_probe;
 
 static void book_foreign_try_acquire(void *user)
 {
     book_foreign_probe *probe = (book_foreign_probe *)user;
     probe->result = book_host_acquire(probe->host, &probe->lease, &probe->view);
+    probe->reload_result = book_host_reload(
+        probe->host, "ace_configurator_scale.cfg");
 }
 
 int main(void)
@@ -300,14 +303,21 @@ int main(void)
     book_foreign_probe worker = {0};
     cmeta_thread_t thread = NULL;
     uint64_t generation;
+    const char *const invalid_files[] = {
+        "ace_configurator_invalid.cfg",
+        "ace_configurator_missing.cfg",
+        "ace_configurator_unknown.cfg",
+        "ace_configurator_range.cfg"
+    };
 
     BOOK_CHECK(cmeta_interface_desc_valid(book_ace_config_strategy_interface()));
     BOOK_CHECK(book_ace_config_strategy_interface()->methods[0].abi != NULL);
 
     /* Invalid configuration is not published even during initialization. */
-    BOOK_CHECK(book_parse("ace_configurator_invalid.cfg", &unmodified) ==
-               BOOK_INVALID);
-    BOOK_CHECK(unmodified.mode == BOOK_MODE_SCALE && unmodified.operand == 7);
+    for (size_t i = 0u; i < sizeof(invalid_files)/sizeof(invalid_files[0]); ++i) {
+        BOOK_CHECK(book_parse(invalid_files[i], &unmodified) == BOOK_INVALID);
+        BOOK_CHECK(unmodified.mode == BOOK_MODE_SCALE && unmodified.operand == 7);
+    }
     BOOK_CHECK(book_host_open(&host, "ace_configurator_add.cfg") == BOOK_OK);
     BOOK_CHECK(host.open && host.generation == 1u);
 
@@ -327,6 +337,7 @@ int main(void)
     BOOK_CHECK(cmeta_thread_join(&thread) == SALTS_OK);
     cmeta_thread_destroy(&thread);
     BOOK_CHECK(worker.result == BOOK_FOREIGN);
+    BOOK_CHECK(worker.reload_result == BOOK_FOREIGN);
     BOOK_CHECK(!worker.lease.live && host.leases == 1u);
 
     duplicate = lease; /* an ordinary struct copy cannot duplicate authority */
@@ -336,9 +347,10 @@ int main(void)
     BOOK_CHECK(book_host_release(&lease) == BOOK_STALE);
     BOOK_CHECK(host.leases == 0u);
 
-    BOOK_CHECK(book_host_reload(&host, "ace_configurator_invalid.cfg") ==
-               BOOK_INVALID);
-    BOOK_CHECK(host.generation == generation);
+    for (size_t i = 0u; i < sizeof(invalid_files)/sizeof(invalid_files[0]); ++i) {
+        BOOK_CHECK(book_host_reload(&host, invalid_files[i]) == BOOK_INVALID);
+        BOOK_CHECK(host.generation == generation);
+    }
     BOOK_CHECK(book_host_reload(&host, "ace_configurator_scale.cfg") == BOOK_OK);
     BOOK_CHECK(host.generation == generation + 1u);
     BOOK_CHECK(book_host_acquire(&host, &lease, &view) == BOOK_OK);
