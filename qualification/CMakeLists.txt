@@ -459,6 +459,17 @@ target_link_libraries(
   PRIVATE
     Salts::CFlow)
 
+# CNet 2.3 Strategy decisions are pure admission policy; CMeta supplies an
+# exact typed ACE-style handler, never a second Reactor or Actor runtime.
+book_qualification_gate(
+  book_ch12_cnet_strategy
+  ch12_cnet_strategy.c)
+target_link_libraries(
+  book_ch12_cnet_strategy
+  PRIVATE
+    Salts::CNet
+    Salts::CMeta)
+
 book_qualification_gate(
   book_ch13_parse_u64
   ch13_parse_u64.c)
