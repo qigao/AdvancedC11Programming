@@ -243,7 +243,6 @@ static book_result book_host_reload(book_host *host, const char *path)
         return BOOK_BUSY;
 
     host->active = candidate; /* stable, caller-owned storage */
-    host->published = book_bind(&host->active);
     host->generation++;
     return BOOK_OK;
 }
