@@ -2,8 +2,11 @@
  * Installed Salts CNet C11: a real client connection becomes pool READY only
  * after an application protocol byte exchange, not merely TCP CONNECTED.
  * Manager owns transport identity; Pool owns physical/lease admission; the
- * protocol owns its two actual reserved operation slots. All remain on one
- * CNet Owner, with no Actor, second Reactor, background dial or replay.
+ * protocol owns its two actual reserved operation slots. A plaintext
+ * application "CMD!" write keeps an existing Pool Lease from admission
+ * until original CNet on_send terminal, not merely until cnet_send_buffer
+ * accepts it. Receiver application delivery is separately observed later.
+ * All remain on one CNet Owner, with no Actor, second Reactor or replay.
  */
 #include <cnet/cnet.h>
 #include <cnet/client_pool.h>
@@ -18,7 +21,13 @@
 #include <stdio.h>
 #include <string.h>
 
-enum { BOOK_READY_BYTES = 4, BOOK_WAIT_MS = 6000 };
+enum { BOOK_READY_BYTES = 4, BOOK_COMMAND_BYTES = 4, BOOK_WAIT_MS = 6000 };
+
+typedef struct book_send_ticket {
+    uint64_t generation;
+    cnet_pool_lease lease;
+    bool admitted, terminal, settled;
+} book_send_ticket;
 
 typedef struct book_session {
     cnet_client client;
@@ -34,9 +43,11 @@ typedef struct book_session {
     cnet_connection incoming;
     cnet_pool_key key;
     cnet_pool_lease leases[2];
+    book_send_ticket command;
 
     size_t client_connected, peer_connected, client_terminal;
     size_t ready_received, ready_sent, recycled;
+    size_t command_sent, command_received, command_callbacks;
     size_t reserved_slots, released_slots;
     bool occupied[2];
     bool ready_armed;
@@ -123,6 +134,41 @@ static void book_client_receive(void *user, cnet_connection connection,
     }
 }
 
+/* A CNet on_send is local ordered-wire-write completion; it is NOT proof
+ * that the remote application received, processed or acknowledged "CMD!". */
+static void book_client_sent(void *user, cnet_connection connection, size_t bytes)
+{
+    book_session *s = (book_session *)user;
+    (void)connection;
+    if (!s->command.admitted || s->command.terminal ||
+        bytes != BOOK_COMMAND_BYTES) {
+        s->callback_failure = SALTS_EPROTO;
+        return;
+    }
+    s->command.terminal = true;
+    ++s->command_callbacks;
+    s->command_sent += bytes;
+}
+
+static void book_peer_receive(void *user, cnet_connection connection,
+                              const cnet_receive_view *view)
+{
+    static const char message[] = "CMD!";
+    book_session *s = (book_session *)user;
+    if (view == NULL || s->command_received > BOOK_COMMAND_BYTES ||
+        view->size > BOOK_COMMAND_BYTES - s->command_received ||
+        memcmp(view->data, message + s->command_received, view->size) != 0) {
+        s->callback_failure = SALTS_EPROTO;
+        return;
+    }
+    s->command_received += view->size;
+    if (s->command_received < BOOK_COMMAND_BYTES) {
+        int rc = cnet_receive(&s->peer, connection, 1u);
+        if (rc != SALTS_OK)
+            s->callback_failure = rc;
+    }
+}
+
 static void book_peer_sent(void *user, cnet_connection connection, size_t bytes)
 {
     book_session *s = (book_session *)user;
@@ -185,6 +231,7 @@ static int book_progress(book_session *s)
             cnet_accepted_stream stream = CNET_ACCEPTED_STREAM_INIT;
             cnet_observer observer = {0};
             observer.on_state = book_peer_state;
+            observer.on_receive = book_peer_receive;
             observer.on_send = book_peer_sent;
             observer.user = s;
             BOOK_CHECK(cnet_listener_accept_detached(&s->listener, &stream) == SALTS_OK);
@@ -229,6 +276,45 @@ static int book_publish_protocol_ready(book_session *s)
     if (rc != SALTS_OK)
         return rc;
     return cnet_pool_bind_ready(&s->pool, s->physical, s->managed, 2u);
+}
+
+/* Admission and terminal are separate owner-local events. One logical
+ * command uses one borrowed Pool Lease; no callback is invoked on rejected
+ * CNet admission, and this sample never creates a retry attempt. */
+static int book_accept_command(book_session *s)
+{
+    static const char message[] = "CMD!";
+    mem_buffer_t *buffer;
+    int rc;
+    if (s->command.admitted || s->ready_received != BOOK_READY_BYTES ||
+        s->leases[0].slot == 0u || s->incoming.slot == 0u)
+        return SALTS_EBUSY;
+    BOOK_CHECK(cnet_receive(&s->peer, s->incoming, 1u) == SALTS_OK);
+    buffer = mem_get_buffer(mem_global(), BOOK_COMMAND_BYTES);
+    BOOK_CHECK(buffer != NULL);
+    memcpy(mem_buffer_data(buffer), message, BOOK_COMMAND_BYTES);
+    mem_set_used(buffer, BOOK_COMMAND_BYTES);
+    rc = cnet_send_buffer(&s->client, s->outgoing, buffer);
+    mem_buffer_release(buffer);
+    if (rc != SALTS_OK)
+        return rc; /* No command ticket or retained Lease on rejection. */
+    s->command = (book_send_ticket){
+        1u, s->leases[0], true, false, false
+    };
+    return SALTS_OK;
+}
+
+static int book_settle_command(book_session *s)
+{
+    int rc;
+    if (!s->command.admitted || s->command.settled)
+        return SALTS_ENOENT;
+    if (!s->command.terminal || s->command_sent != BOOK_COMMAND_BYTES)
+        return SALTS_EBUSY;
+    rc = cnet_pool_release(&s->pool, s->command.lease);
+    if (rc == SALTS_OK)
+        s->command.settled = true;
+    return rc;
 }
 
 static int book_retry_contract(void)
@@ -357,6 +443,7 @@ int main(void)
 
     attachment.observer.on_state = book_client_state;
     attachment.observer.on_receive = book_client_receive;
+    attachment.observer.on_send = book_client_sent;
     attachment.observer.user = &s;
     attachment.on_recycle = book_recycle;
     BOOK_CHECK(cnet_manager_reserve(&s.manager, &attachment, &s.managed) == SALTS_OK);
@@ -414,6 +501,47 @@ int main(void)
         &s.pool, &s.key, &protocol, &denied, &leased) == SALTS_ENOBUFS);
     BOOK_CHECK(denied.slot == 0u);
 
+    /* One real CNet plaintext application write: enqueue is not completion.
+     * The first real Lease remains borrowed until the original on_send event.
+     * Do not poll the peer while observing local send terminal: the receiver
+     * application has NOT received/ACKed merely because local CNet sent it. */
+    BOOK_CHECK(book_accept_command(&s) == SALTS_OK);
+    BOOK_CHECK(s.command.admitted && s.command.generation == 1u);
+    BOOK_CHECK(!s.command.terminal && !s.command.settled);
+    BOOK_CHECK(s.command_sent == 0u && s.command_received == 0u);
+    BOOK_CHECK(book_settle_command(&s) == SALTS_EBUSY);
+    BOOK_CHECK(cnet_pool_get_snapshot(&s.pool, &pool_state) == SALTS_OK);
+    BOOK_CHECK(pool_state.active_leases == 2u);
+
+    until = cmeta_monotonic_ms() + BOOK_WAIT_MS;
+    while (!s.command.terminal && cmeta_monotonic_ms() < until) {
+        size_t events = 0u, work = 0u;
+        BOOK_CHECK(cnet_client_poll(&s.client, 0u, &events) == SALTS_OK);
+        BOOK_CHECK(cnet_manager_advance(&s.manager, 1u, &work) == SALTS_OK);
+        BOOK_CHECK(s.callback_failure == 0);
+        cmeta_sleep_ms(1u);
+    }
+    BOOK_CHECK(s.command.terminal && s.command_callbacks == 1u);
+    BOOK_CHECK(s.command_sent == BOOK_COMMAND_BYTES);
+    BOOK_CHECK(s.command_received == 0u); /* peer application not polled */
+    BOOK_CHECK(!s.command.settled);
+    BOOK_CHECK(cnet_pool_get_snapshot(&s.pool, &pool_state) == SALTS_OK);
+    BOOK_CHECK(pool_state.active_leases == 2u);
+    BOOK_CHECK(book_settle_command(&s) == SALTS_OK);
+    BOOK_CHECK(book_settle_command(&s) == SALTS_ENOENT);
+    BOOK_CHECK(cnet_pool_release(&s.pool, s.leases[0]) == SALTS_ENOENT);
+    BOOK_CHECK(s.released_slots == 1u && s.occupied[1] && !s.occupied[0]);
+
+    /* The remote application receipt happens in a later, separate poll.
+     * This is not remote execution completion or a signed MMP ACK. */
+    until = cmeta_monotonic_ms() + BOOK_WAIT_MS;
+    while (s.command_received != BOOK_COMMAND_BYTES &&
+           cmeta_monotonic_ms() < until) {
+        BOOK_CHECK(book_progress(&s) == 0);
+        cmeta_sleep_ms(1u);
+    }
+    BOOK_CHECK(s.command_received == BOOK_COMMAND_BYTES);
+
     /* Stop admission first. The Manager still owns a real BOUND transport. */
     BOOK_CHECK(cnet_pool_begin_drain(&s.pool, s.physical) == SALTS_OK);
     BOOK_CHECK(cnet_pool_try_acquire(
@@ -436,9 +564,9 @@ int main(void)
     BOOK_CHECK(cnet_pool_terminal(&s.pool, s.physical) == SALTS_OK);
     BOOK_CHECK(cnet_pool_get_snapshot(&s.pool, &pool_state) == SALTS_OK);
     BOOK_CHECK(pool_state.terminal_waiting_for_leases == 1u);
-    BOOK_CHECK(pool_state.active_leases == 2u && !pool_state.drained);
+    BOOK_CHECK(pool_state.active_leases == 1u && !pool_state.drained);
     BOOK_CHECK(cnet_pool_destroy(&s.pool) == SALTS_EBUSY);
-    BOOK_CHECK(cnet_pool_release(&s.pool, s.leases[0]) == SALTS_OK);
+    BOOK_CHECK(s.command.settled);
     BOOK_CHECK(cnet_pool_release(&s.pool, s.leases[0]) == SALTS_ENOENT);
     BOOK_CHECK(cnet_pool_release(&s.pool, s.leases[1]) == SALTS_OK);
     BOOK_CHECK(s.callback_failure == 0);

@@ -78,6 +78,23 @@ rewriting those earlier implementation claims or using source-tree dependencies.
   real terminal/Manager recycle and lease-after-terminal settlement are tested;
   the sample does not implement production TLS authentication, a multiplexed
   remote server, real reconnect or a replayed application request.
+- The same installed-book Client Pool gate now admits one plain `CMD!`
+  application write under a real Pool Lease, verifies that enqueue did not
+  settle its Lease, observes the original CNet `on_send` from sender-only
+  owner progression, releases that Lease once **before** the remote application
+  is polled, and holds another Lease across actual Manager physical retirement.
+  It establishes **successful local plain CNet send completion**, not the
+  encrypted P2P/Noise send-failure terminal or MMP remote execution.
+- **Comparative research, not a book runtime dependency:** TurboP2P
+  [Draft PR #68](https://github.com/qigao/turboP2P/pull/68) at
+  [exact unmerged SHA `088d06429ef5348b43e4ee74ce7f5f5d0568ee5e`](https://github.com/qigao/turboP2P/commit/088d06429ef5348b43e4ee74ce7f5f5d0568ee5e)
+  implements a signed-MMP-specific Lease held through complete original
+  encrypted P2P/CNet send terminal or physical failure, distinct from remote
+  application ACK; [Linux Salts Foundation CI #38061634709](https://github.com/qigao/turboP2P/actions/runs/38061634709)
+  succeeded on that exact HEAD. At comparison time PR #68 remains Draft
+  stacked on Draft #61 and issue #65 remains open. This does NOT qualify a
+  stable TurboP2P release, the book's Windows/macOS MMP execution or future
+  revision of that unfinished branch. No P2P code is linked into the book.
 - The published 2.3 ACE pattern API reference adds `cmeta/interface.h`,
   `cmeta/ace_interceptor.h` and `cmeta/ace_synchronization.h` for typed
   Strategy, Interceptor and borrowed Lockable/Scoped Locking. `NativeIO` owns
